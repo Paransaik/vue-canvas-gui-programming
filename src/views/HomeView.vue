@@ -1,18 +1,31 @@
 <template>
-  <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div class="homeContainer">
+    <HaederView/>
+    <BaseHaederView/>
   </div>
 </template>
 
 <script>
 // @ is an alias to /src
-import HelloWorld from '@/components/HelloWorld.vue'
+import HaederView from '@/components//HaederView.vue';
+import BaseHaederView from '@/components/BaseHaederView.vue';
 
 export default {
   name: 'HomeView',
   components: {
-    HelloWorld
+    HaederView,
+    BaseHaederView
   }
 }
 </script>
+
+<style>
+
+.homeContainer {
+  border: solid black 1px;
+  /* border: 1px dotted red; */
+  height: auto;
+  display: flex;
+  flex-direction: column;
+}
+</style>
