@@ -7,192 +7,72 @@ import axios from "axios"
 export default createStore({
   state: {
     // [] 배열, {} 맵
-    patientNameList: [],
+    allPatientList: [],
 
     patientPictureList: [],
 
     patientRecordList: [],
 
     patientRecordFilenameList: [],
-
-    picture: '',
-
-    imgs: [],
   },
 
   getters: {
-    patientNameList: state => state.patientNameList,
+    allPatientList: state => state.allPatientList,
 
     patientPictureList: state => state.patientPictureList,
 
     patientRecordList: state => state.patientRecordList,
 
     patientRecordFilenameList: state => state.patientRecordFilenameList,
-
-    picture: state => state.picture,
-
-    imgs: state => state.imgs,
   },
 
   mutations: {
-    [Constant.SET_PATIENTNAMELIST]: (state, patientNameList) => state.patientNameList = patientNameList,
+    [Constant.SET_ALLPATIENTLIST]: (state, allPatientList) => state.allPatientList = allPatientList,
 
     [Constant.SET_PATIENTPICTURELIST]: (state, patientPictureList) => state.patientPictureList = patientPictureList,
 
     [Constant.SET_PATIENTRECORDLIST]: (state, patientRecordList) => state.patientRecordList = patientRecordList,
 
     [Constant.SET_PATIENTRECORDFILENAMELIST]: (state, patientRecordFilenameList) => state.patientRecordFilenameList = patientRecordFilenameList,
-
-    [Constant.SET_PICTURE]: (state, picture) => state.picture = picture,
-
-    [Constant.SET_IMGS]: (state, imgs) => state.imgs = imgs,
   },
 
   actions: {
-    [Constant.GET_PATIENTNUMLIST]({ commit }) {
+    [Constant.GET_ALLPATIENTLIST]({ commit }) {
       axios({
-        url: drf.patient.patientNumList(),
+        url: drf.patient.allPatientList(),
         method: 'get'
       })
       .then(res => {
-        commit(Constant.SET_PATIENTNUMLIST, res.data.Result.Entities)
-      })
-      .catch(err => console.error(err))
-    },
-
-    // async 실험
-    // [Constant.GET_PATIENTNAMELIST]({ commit }, param) {
-    //   const getName = (param) => {
-    //     const newArr = async() => {
-    //       await axios({
-    //         url: drf.patient.patientNameList(param),
-    //         method: 'get'
-    //       })
-    //       .then(res => {
-    //         const datas = res.data.Result.Entities;
-    //         console.log(datas);
-    //         commit(Constant.SET_PATIENTNAMELIST, datas)
-    //       })
-    //       .catch(err => console.error(err))
-    //     }
-
-    //     this.patientNameList.map(element => {
-    //       axios({
-    //         url: drf.patient.patientName(element),
-    //         method: 'get'
-    //       })
-    //       .then( res => {
-    //         const name = res.data.Result;
-    //         // console.log(`${name.FirstName} ${name.LastName}`);
-    //         return `${name.FirstName} ${name.LastName}`;
-    //       })
-    //       .catch(err => console.error(err))
-    //     })
-
-    //     return newArr;
-    //   }
-      
-    //   console.log(getName(param));
-    // },
-
-
-    [Constant.GET_PATIENTNAMELIST]({ commit }, param) {
-      axios({
-        url: drf.patient.patientNameList(param),
-        method: 'get'
-      })
-      .then(res => {
-        const datas = res.data.Result.Entities;
-
-        // datas.map(element => {
-        //   axios({
-        //     url: drf.patient.patientName(element),
-        //     method: 'get'
-        //   })
-        //   .then( res => {
-        //     const name = res.data.Result;
-        //     // console.log(`${name.FirstName} ${name.LastName}`);
-        //     return `${name.FirstName} ${name.LastName}`;
-        //   })
-        //   .catch(err => console.error(err))
-        // })
-
-        commit(Constant.SET_PATIENTNAMELIST, datas)
-        
-      })
-      .catch(err => console.error(err))
-    },
-
-    // getName 
-    [Constant.GET_PATIENTNAME](...uid) {
-      axios({
-        url: drf.patient.patientName(uid),
-        method: 'get'
-      })
-      .then(res => {
-        const data = res.data.Result;
-        console.log(`${data.FirstName} ${data.LastName}`);
-        return `${data.FirstName} ${data.LastName}`;
+        commit(Constant.SET_ALLPATIENTLIST, res.data.Result.Entities)
       })
       .catch(err => console.error(err))
     },
 
     [Constant.GET_PATIENTPICTURELIST]({commit}, uid) {
-      console.log(drf.patient.patientPictureList(uid));
+      // uid.target.value = chartID
       axios({
-        url: drf.patient.patientPictureList(uid),
+        url: drf.patient.patientPictureList(uid.target.value),
         method: 'get'
       })
       .then(res => {
-        commit(Constant.SET_PATIENTPICTURELIST, res.data.Result.Entities);
-        const datas = res.data.Result.Entities;
-        
-        // ================================================
-        datas.forEach(element => {
-          axios({
-            url: drf.patient.patientSeriesNum(element),
-            method: 'get'
-          })
-          .then(res => {
-            console.log('patientImgFileDownload');
-            console.log(res.data.Result.Entities);
-            axios({
-              url: drf.patient.patientImgFileDownload(res.data.Result.Entities),
-              method: 'get',
-              // headers: {
-              //   "Content-Type": "multipart/form-data"
-              // }
-              responseType: 'blob'
-            })
-            .then(res => {
-              console.log(res);
-              console.log(res.data);
-              const blob = URL.createObjectURL(new Blob([res.data], {type:'image/bmp'}));
-              commit(Constant.SET_IMGS, blob);
-            });
-          });
-        });
-        // context.state.imgs = newArr;
-        // console.log(context.state.imgs);
+        // res.data.Result.SeriesList.Entities = instanceUid list
+        const datas = res.data.Result.SeriesList.Entities;
+
+        // 1
+        // const newArr = [];
+        // datas.forEach(element => {
+        //   console.log(element.UniqueID);
+        //   newArr.push(element.UniqueID);
+        // });
         // console.log(newArr);
-        // ================================================
-      })
-      .catch(err => console.error(err))
-    },
 
-    [Constant.GET_IMGS]() {
-      return this.state.imgs;
-    },
+        // 2
+        const newArr = datas.map(element => {
+          return element.UniqueID;
+        });
+        // console.log(newArr);
 
-    [Constant.GET_PATIENTSERIESNUM]({ commit }, study) {
-      console.log(drf.patient.patientSeriesNum(study));
-      axios({
-        url: drf.patient.patientSeriesNum(study),
-        method: 'get'
-      })
-      .then(res => {
-        console.log(res.data.Result.Entities);
-        commit(Constant.SET_PATIENTPICTURELIST, res.data.Result.Entities)
+        commit(Constant.SET_PATIENTPICTURELIST, newArr);
       })
       .catch(err => console.error(err))
     },
@@ -209,7 +89,6 @@ export default createStore({
       .catch(err => console.error(err))
     },
 
-    
     [Constant.GET_PATIENTRECORDFILENAMELIST]({ commit }, datas) {
       axios({
         url: drf.patient.patientRecordFilenameList(datas.pn, datas.ix),
@@ -220,18 +99,6 @@ export default createStore({
       })
       .catch(err => console.error(err))
     },
-
-    [Constant.GET_PICTURE]({ commit }, datas) {
-      axios({
-        url: drf.patient.picture(datas.pn, datas.fn),
-        method: 'get'
-      })
-      .then(res => {
-        console.log(res);
-        commit(Constant.SET_PICTURE, res.data)
-      })
-      .catch(err => console.error(err))
-    }
   },
 
   modules: {

@@ -1,7 +1,8 @@
 <template>
   <div class="baseHeaderView">
-    <UtilityView/>
-    <BaseUtilityView/>
+    <UtilityView @status="test"/>
+    <BaseUtilityView :status="deliveryStatus"/>
+    {{ num }}
   </div>
 </template>
 
@@ -16,6 +17,17 @@ export default {
     UtilityView,
     BaseUtilityView
   },
+
+  data: () => ({
+    deliveryStatus: false,
+  }),
+
+  methods: {
+    test(e) {
+      this.deliveryStatus = e;
+    }
+  },
+  
 }
 </script>
 

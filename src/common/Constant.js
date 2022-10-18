@@ -1,7 +1,7 @@
 export default {
   //-------patient
-  GET_PATIENTNAMELIST: "getPatientNameList",
-  SET_PATIENTNAMELIST: "setPatientNameList",
+  GET_ALLPATIENTLIST: "getAllPatientList",
+  SET_ALLPATIENTLIST: "setAllPatientList",
   GET_PATIENTNAME: "getPatientName",
   SET_PATIENTNAME: "setPatientName",
 

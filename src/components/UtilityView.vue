@@ -5,28 +5,37 @@
     <div class="itemBox">
       <div 
         class="item"
-        v-for="f in first" :key="f" :value="f"
-        @click="f=!f"
-        :class="{isToggle:f}"
+        v-for="(v, k) in first" :key="k"
+        @click="first[k] = !v, send(first[k])"
+        :class="{isToggle:v}"
         >
-        <img :src="require(`@/assets/img/utils/icon-${f}.png`)"/>
+        <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
       </div>
     </div>
     <div class="line"></div>
 
     <!-- 2 -->
     <div class="itemBox">
-      <div class="item" v-for="s in second" :key="s">
-        <img :src="require(`@/assets/img/utils/icon-${s}.png`)"/>
+      <div 
+        class="item"
+        v-for="(v, k) in second" :key="k"
+        @click="[second[k] = !v, send(second[k])]"
+        :class="{isToggle:v}"
+        >
+        <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
       </div>
     </div>
     <div class="line"></div>
 
     <!-- 3 -->
     <div class="itemBox">
-      <div class="item bar" v-for="t in third" :key="t">
-        <img 
-          :src="require(`@/assets/img/utils/icon-${t}.png`)"/>
+      <div 
+        class="item bar"
+        v-for="(v, k) in third" :key="k"
+        @click="third[k] = !v"
+        :class="{isToggle:v}"
+        >
+        <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
       </div>
       <div class="item"><div class="color"></div></div>
       <select class="colorSelect same">
@@ -37,8 +46,13 @@
 
     <!-- 4 -->
     <div class="itemBox">
-      <div class="item" v-for="f in fourth" :key="f">
-        <img :src="require(`@/assets/img/utils/icon-${f}.png`)"/>
+      <div 
+        class="item"
+        v-for="(v, k) in fourth" :key="k"
+        @click="fourth[k] = !v"
+        :class="{isToggle:v}"
+        >
+        <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
       </div>
     </div>
     <div class="line"></div>
@@ -49,16 +63,26 @@
         <img src="@/assets/img/utils/icon-implant.png"/>
         <span class="same">임플란트 식립</span>
       </div>
-      <div class="item" v-for="f in fifth" :key="f">
-        <img :src="require(`@/assets/img/utils/icon-${f}.png`)"/>
+      <div 
+        class="item"
+        v-for="(v, k) in fifth" :key="k"
+        @click="fifth[k] = !v"
+        :class="{isToggle:v}"
+        >
+        <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
       </div>
     </div>
     <div class="line"></div>
 
     <!-- 6 -->
     <div class="itemBox">
-      <div class="item" v-for="s in sixth" :key="s">
-        <img :src="require(`@/assets/img/utils/icon-${s}.png`)"/>
+      <div 
+        class="item"
+        v-for="(v, k) in sixth" :key="k"
+        @click="sixth[k] = !v"
+        :class="{isToggle:v}"
+        >
+        <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
       </div>
     </div>
     <div class="line"></div>
@@ -83,22 +107,36 @@ export default {
   },
 
   data: () => ({
-    isActive: false,
-    pant: false, zoom: false, info: false,
-    bright: false, inverse: false, sharpen: false, ruler: false, tapeline: false, angle: false, arrow: false, shape: false,
-    draw : false, nerve: false,
-    '01' : false, '02' : false, '03': false, '04': false,
-    'implant-01' : false, 'implant-02': false, 'pontic': false,
-    'select-capture' : false, 'full-screen-capture': false, 'window-capture': false,
-
-
-    first: ['pan', 'zoom', 'info'],
-    second: ['bright', 'inverse', 'sharpen', 'ruler', 'tapeline', 'angle', 'arrow', 'shape'],
-    third: ['draw', 'nerve'],
-    fourth: ['01', '02', '03', '04'],
-    fifth: ['implant-01', 'implant-02', 'pontic'],
-    sixth: ['select-capture', 'full-screen-capture', 'window-capture'],
+    first: {pan: false, zoom: false, info: false},
+    second: {bright: false, inverse: false, sharpen: false, ruler: false, tapeline: false, angle: false, arrow: false, shape: false},
+    third: {draw: false, nerve: false},
+    fourth: {'01': false, '02': false, '03': false, '04': false},
+    fifth: {'implant-01': false, 'implant-02': false, pontic: false},
+    sixth: {'select-capture': false, 'full-screen-capture': false, 'window-capture': false},
   }),
+
+  methods: {
+    send(e){
+      this.$emit('status', e);
+    }
+  },
+
+  // computed: {
+  //   // 1-2
+  //   zoom: {
+  //     send: function () {
+  //       return 'tt';
+  //     }
+  //   }
+  // },
+
+  watch: {
+    // 1-2
+    zoom: function (val) {
+      console.log(val);
+    }
+  },
+
 }
 </script>
 

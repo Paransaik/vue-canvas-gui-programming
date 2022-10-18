@@ -12,10 +12,11 @@ import BaseHaederView from '@/components/BaseHaederView.vue';
 
 export default {
   name: 'HomeView',
+
   components: {
     HaederView,
     BaseHaederView
-  }
+  },
 }
 </script>
 

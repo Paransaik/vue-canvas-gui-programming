@@ -1,9 +1,8 @@
 <template>
   <div class="baseUtilityView">
     <div class="mainPrintView">
-      <img class="mainImg" :src="mainImg"/>
+      <img class="mainImg" :src="mainImg" :class="{isThT:status}" />
     </div>
-  
     <div class="thumbnail">
       <div class="filterBtns">
         <div>
@@ -28,40 +27,47 @@
           <div class="imgBox" 
             @click="[mainImg = imgs, isActive=!isActive]"
             :class="{isToggle:isActive}"
-            >
-            <img class="img" :src="imgs" style="pointer-events: none;"/>
+            v-for="pPL in patientPictureList"
+            :key="pPL"
+            >{{getImages(pPL)}}
+            <!-- <img class="img" :src="getImages(pPL)" style="pointer-events: none;"/> -->
           </div>
-
           <div class="imgBox" @click="movedImgfile()" >
-            <img class="img" :src="imgs"/>
+            <img class="img" :src="iii"/>
           </div>
 
           <div class="imgBox" @click="movedImgfile()" >
             <img class="img"  :src="imgs"/>
           </div>
         </div>
-        
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import axios from "axios"
+import drf from '@/api/drf'
 import { mapGetters, mapActions } from 'vuex';
 import Constant from "@/common/Constant.js";
+
 
 export default {
   name: 'BaseUtilityView',
 
+  props: [
+    'status',
+  ],
+
   data: () => ({
     mainImg: ' ',
     isActive: false,
+    iii: ' ',
   }),
 
   computed: {
     ...mapGetters([
       'patientPictureList',
-      'imgs',
     ]),
   },
 
@@ -71,8 +77,38 @@ export default {
   methods: {
     ...mapActions([
       Constant.GET_PATIENTPICTURELIST,
-      Constant.GET_IMGS,
     ]),
+
+    getImages(instanceID) {
+      // console.log(instanceID);
+      return new Promise(function(resolve, reject){
+        axios({
+          url: drf.patient.patientImgFileDownload(instanceID),
+          method: 'get',
+          // headers: {
+          //   "Content-Type": "multipart/form-data"
+          // }
+          responseType: 'blob',
+          timeout: 5000,
+        }).then(res => {
+          const blob = URL.createObjectURL(new Blob([res.data], {type:'image/bmp'}));
+          console.log(blob);
+          resolve(blob)
+        })
+        .catch((error) => {
+          reject(error);
+        });
+      });
+    },
+
+    // const res = async () => {
+    //   const bty = await axios.get(drf.patient.patientImgFileDownload(instanceID), {responseType: 'blob'});
+    //   const blob = URL.createObjectURL(new Blob([bty.data], {type:'image/bmp'}));
+    //   return blob;
+    // };
+
+    // res(1).then(d => {return d});
+
   },
 }
 </script>
@@ -113,7 +149,6 @@ export default {
     padding: 12px 16px 16px 16px;
     background-color: #d8dde8;
   }
-
 
   .filterName {
     margin: 0 0 4px 2px;
@@ -186,5 +221,10 @@ export default {
 
   .isToggle {
     border: solid 2px blue;
+  }
+
+  /* 2-2 */
+  .isThT {
+    filter: invert(100%);
   }
 </style>
