@@ -9,7 +9,7 @@
           type="text" 
           class="searchInput" 
           placeholder="Input patient Info"
-          @change="getPatientPictureList"
+          @change="getPatientSeriesList"
         >
 
         <datalist id="patientUid">
@@ -22,7 +22,6 @@
           </option>
         </datalist>
         <!-- ================================ -->
-
       </div>
 
       <!-- <div class="autocomplete">
@@ -37,9 +36,9 @@
         </ul>
       </div> -->
 
-      <div v-for="aPL in allPatientList" :key="aPL" :vlaue="aPL">
+      <!-- <div v-for="aPL in allPatientList" :key="aPL" :vlaue="aPL">
         <button v-text="`${aPL.LastName} ${aPL.MiddleName} ${aPL.FirstName}`" @click="getPatientPictureList(aPL.UniqueID)"></button>
-      </div>
+      </div> -->
 
       <div class="haeaderStatusBar">
         <div>영상 보기</div>
@@ -57,11 +56,11 @@ export default {
   name: 'HeaderView',
   
   data: () => ({
-    isOpen: false,
-    results: [],
-    search: "",
-    isLoading: false,
-    arrowCounter: 0
+    // isOpen: false,
+    // results: [],
+    // search: "",
+    // isLoading: false,
+    // arrowCounter: 0
   }),
 
   components: {
@@ -71,7 +70,7 @@ export default {
     ...mapGetters([
       'allPatientList',
       'patientName',
-      'patientPictureList',
+      'patientSeriesList',
       'patientRecordList',
       'patientRecordFilenameList',
     ]),
@@ -103,10 +102,11 @@ export default {
     ...mapActions([
       Constant.GET_ALLPATIENTLIST,
       Constant.GET_PATIENTNAME,
-      Constant.GET_PATIENTPICTURELIST,
+      Constant.GET_PATIENTSERIESLIST,
       Constant.GET_PATIENTRECORDLIST,
       Constant.GET_PATIENTRECORDFILENAMELIST,
     ]),
+
 
     processAPL() {
       // var response = "Aleppo Alexandria Alger Almaty"
