@@ -1,7 +1,15 @@
 <template>
   <div class="baseUtilityView">
+
     <div class="mainPrintView">
-      <img class="mainImg" :src="mainImg" :class="{isThT:status}" />
+      <!-- <img class="mainImg" :src="mainImg" :class="{isThT:probsdata.status}" /> -->
+      <img class="mainImg" 
+      :src="mainImg" 
+      :class="{isOhF: probsdata.name === '01',
+                isOhS: probsdata.name === '02',
+                isOhT: probsdata.name === '03',
+                isOhO: probsdata.name === '04'}"/>
+
     </div>
     <div class="thumbnail">
       <div class="filterBtns">
@@ -11,7 +19,6 @@
             <option>All</option>
           </select>
         </div>
-        
         <div>
           <span class="filterName">Modality</span>
           <select class="filterSelect">
@@ -19,28 +26,35 @@
           </select>
         </div>
       </div>
-
       <div class="thumbnailList">
-        <div class="thumbnailBtn">▼ Thumbnail</div>
         
-        <div class="thumbnails">
-          <div class="imgBox" 
-            @click="[mainImg = imgs, isActive=!isActive]"
+    
+      <div class="thumbnailBtn">▼ Thumbnail {{ probsdata }}</div>
+        <div id="thumbnails" class="thumbnails" @click="mainImg = iii, getImg('1.2.410.200062.2.1.20221013133913452.5.402158.541.502')">
+          <!-- <div class="imgBox"
+            @click="[mainImg = blobImgList, isActive=!isActive]"
             :class="{isToggle:isActive}"
-            v-for="pPL in patientPictureList"
-            :key="pPL"
-            >{{getImages(pPL)}}
-            <!-- <img class="img" :src="getImages(pPL)" style="pointer-events: none;"/> -->
-          </div>
-          <div class="imgBox" @click="movedImgfile()" >
-            <img class="img" :src="iii"/>
-          </div>
+            v-for="bIL in blobImgList"
+            :key="bIL"
+            > -->
 
-          <div class="imgBox" @click="movedImgfile()" >
-            <img class="img"  :src="imgs"/>
-          </div>
+            <!-- <div id="imgBox" class="imgBox"
+            @click="[mainImg = getImg(p), isActive=!isActive]"
+            :class="{isToggle:isActive}"
+            v-for="p in patientSeriesList"
+            :key="p"
+            > -->
+
+            <!-- {{bIL}} -->
+            <!-- {{ getBlobIames[0] }} -->
+            <!-- {{ blobImgList }} -->
+            <!-- {{getBlobImgList}} -->
+            <!-- <img class="img" :src="getImg(p)" style="pointer-events: none;"/> -->
+            <!-- {{ getImg() }} -->
+          <!-- </div> -->
         </div>
       </div>
+
     </div>
   </div>
 </template>
@@ -51,24 +65,27 @@ import drf from '@/api/drf'
 import { mapGetters, mapActions } from 'vuex';
 import Constant from "@/common/Constant.js";
 
-
 export default {
   name: 'BaseUtilityView',
 
   props: [
-    'status',
+    'probsdata',
   ],
 
   data: () => ({
     mainImg: ' ',
     isActive: false,
-    iii: ' ',
+    iii: '',
+    'test': 4,
   }),
 
   computed: {
     ...mapGetters([
-      'patientPictureList',
+      'patientSeriesList',
+      'blobImgList',
     ]),
+    
+
   },
 
   created() {
@@ -76,30 +93,71 @@ export default {
 
   methods: {
     ...mapActions([
-      Constant.GET_PATIENTPICTURELIST,
+      Constant.GET_PATIENTSERIESLIST,
+      Constant.GET_BLOBIMGS,
     ]),
 
-    getImages(instanceID) {
-      // console.log(instanceID);
-      return new Promise(function(resolve, reject){
-        axios({
-          url: drf.patient.patientImgFileDownload(instanceID),
+    // changeAction() {
+    //   const style = document.documentElement.style
+    //   style.setProperty('--test-deg', '90deg')
+    // },
+
+    getImg(p) {
+      const imgBox = document.getElementById('thumbnails');
+
+      return axios({
+          url: drf.patient.patientImgFileDownload(p),
           method: 'get',
-          // headers: {
-          //   "Content-Type": "multipart/form-data"
-          // }
           responseType: 'blob',
-          timeout: 5000,
         }).then(res => {
           const blob = URL.createObjectURL(new Blob([res.data], {type:'image/bmp'}));
           console.log(blob);
-          resolve(blob)
+          const div = document.createElement('div');
+          div.style.width = '160px';
+          div.style.height = '90px';
+          div.style.margin = '0 0 0 8px';
+          div.style.border = 'solid 1px #d5dae5';
+          div.style.backgroundColor = '#eaecf2';
+
+          const img = document.createElement('img');
+          img.setAttribute('src', blob);
+          img.style.display = 'block';
+          img.style.width = '90px';
+          img.style.height = '89px';
+          img.style.margin = '0 auto';
+
+          div.appendChild(img);
+          imgBox.appendChild(div);
+          this.iii = blob;
+          // document.getElementById('imgBox').innerHTML = "<img class='img' src=" + blob +" style='pointer-events: none;'/>"
+          return blob;
         })
         .catch((error) => {
-          reject(error);
+          console.log(error);
         });
-      });
     },
+
+    // getImages(instanceID) {
+    //   console.log(instanceID);
+    //   return new Promise(function(resolve, reject){
+    //     axios({
+    //       url: drf.patient.patientImgFileDownload(instanceID),
+    //       method: 'get',
+    //       // headers: {
+    //       //   "Content-Type": "multipart/form-data"
+    //       // }
+    //       responseType: 'blob',
+    //       timeout: 5000,
+    //     }).then(res => {
+    //       const blob = URL.createObjectURL(new Blob([res.data], {type:'image/bmp'}));
+    //       console.log(blob);
+    //       resolve(blob)
+    //     })
+    //     .catch((error) => {
+    //       reject(error);
+    //     });
+    //   });
+    // },
 
     // const res = async () => {
     //   const bty = await axios.get(drf.patient.patientImgFileDownload(instanceID), {responseType: 'blob'});
@@ -114,6 +172,10 @@ export default {
 </script>
 
 <style scoped>
+:root {
+  --test-deg: 3,
+}
+
   .baseUtilityView {
     background-color: yellow;
     width: 100%;
@@ -200,7 +262,7 @@ export default {
     align-items: center;
     width: auto;
     height: 124px;
-    padding: 9px 0 6px 10px;
+    /* padding: 9px 0 6px 10px; */
     background-color: #f4f6f9;
   }
 
@@ -226,5 +288,33 @@ export default {
   /* 2-2 */
   .isThT {
     filter: invert(100%);
+  }
+
+  /* 4-1 */
+  .isOhF {
+    transform: rotate( calc(90deg * v-bind('probsdata.status')) );
+  }
+  
+  /* 4-2 */
+  .isOhS {
+    transform: rotate( calc(-90deg * v-bind('probsdata.status')) );
+  }
+
+  /* 4-3 */
+  .isOhT {
+    transform: rotateX( calc(180deg * v-bind('probsdata.status')) )
+  }
+
+  /* 4-4 */
+  .isOhO {
+    transform: rotateY( calc(180deg * v-bind('probsdata.status')) )
+    /* animation: rotate_isOhO 1s linear infinite;
+    transform-origin: 50% 50%; */
+  }
+
+  @keyframes rotate_isOhO {
+    100% {
+      transform: rotateY( 360deg )
+    }
   }
 </style>

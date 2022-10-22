@@ -12,7 +12,7 @@ export default {
     patientName: (uid) => `patient/json/get/uid/${uid}`,
     
     // patientPictureList: (uid) => `study/json/search/uid/patient/${uid}`,
-    patientPictureList: (chartId) => `misc/json/search/patient/id/params?p_id=${chartId}&all=true`,
+    patientSeriesList: (chartId) => `misc/json/search/patient/id/params?p_id=${chartId}&all=true`,
 
     patientSeriesNum: (study) => `series/json/search/uid/study/${study}`,
     patientThumbnail: (seriesNum) => `download_instance/instance/thumb/params?uid=${seriesNum}.1&type=1`,

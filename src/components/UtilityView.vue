@@ -6,7 +6,7 @@
       <div 
         class="item"
         v-for="(v, k) in first" :key="k"
-        @click="first[k] = !v, send(first[k])"
+        @click="[first[k] = !v, send('1', k, first[k])]"
         :class="{isToggle:v}"
         >
         <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
@@ -19,7 +19,7 @@
       <div 
         class="item"
         v-for="(v, k) in second" :key="k"
-        @click="[second[k] = !v, send(second[k])]"
+        @click="[second[k] = !v, send('1', k, second[k])]"
         :class="{isToggle:v}"
         >
         <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
@@ -49,7 +49,7 @@
       <div 
         class="item"
         v-for="(v, k) in fourth" :key="k"
-        @click="fourth[k] = !v"
+        @click="fourth[k]++, send('4', k, fourth[k])"
         :class="{isToggle:v}"
         >
         <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
@@ -107,17 +107,28 @@ export default {
   },
 
   data: () => ({
+    // f
     first: {pan: false, zoom: false, info: false},
+    // s
     second: {bright: false, inverse: false, sharpen: false, ruler: false, tapeline: false, angle: false, arrow: false, shape: false},
+    // t
     third: {draw: false, nerve: false},
-    fourth: {'01': false, '02': false, '03': false, '04': false},
+    // o
+    fourth: {'01': 0, '02': 0, '03': 0, '04': 0},
+    // i
     fifth: {'implant-01': false, 'implant-02': false, pontic: false},
+    // x
     sixth: {'select-capture': false, 'full-screen-capture': false, 'window-capture': false},
   }),
 
   methods: {
-    send(e){
-      this.$emit('status', e);
+    send(t, n, s){
+      const datas = {
+        type: t,
+        name: n,
+        status: s
+      }
+      this.$emit('datas', datas);
     }
   },
 
@@ -130,12 +141,12 @@ export default {
   //   }
   // },
 
-  watch: {
-    // 1-2
-    zoom: function (val) {
-      console.log(val);
-    }
-  },
+  // watch: {
+  //   // 2-2
+  //   zoom: function (val) {
+  //     console.log(val);
+  //   }
+  // },
 
 }
 </script>
