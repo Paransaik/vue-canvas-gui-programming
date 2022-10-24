@@ -3,12 +3,22 @@
 
     <div class="mainPrintView">
       <!-- <img class="mainImg" :src="mainImg" :class="{isThT:probsdata.status}" /> -->
+<<<<<<< HEAD
       <img class="mainImg isOhFSTO" 
       :src="mainImg"
       />
     <!-- :class="{isOhFSTO: probsdata.name === '01' || probsdata.name === '02',
                 isOhT: probsdata.name === '03',
                 isOhO: probsdata.name === '04'}" -->
+=======
+      <img class="mainImg" 
+      :src="mainImg" 
+      :class="{isOhF: probsdata.name === '01',
+                isOhS: probsdata.name === '02',
+                isOhT: probsdata.name === '03',
+                isOhO: probsdata.name === '04'}"/>
+
+>>>>>>> 0ee2a2675c5e52faa057eeefc27e8a7d0628c71e
     </div>
     <div class="thumbnail">
       <div class="filterBtns">
@@ -75,6 +85,10 @@ export default {
     mainImg: ' ',
     isActive: false,
     iii: '',
+<<<<<<< HEAD
+=======
+    'test': 4,
+>>>>>>> 0ee2a2675c5e52faa057eeefc27e8a7d0628c71e
   }),
 
   computed: {
@@ -105,6 +119,7 @@ export default {
 
       return axios({
           url: drf.patient.patientImgFileDownload(p),
+<<<<<<< HEAD
           method: 'get',
           responseType: 'blob',
         }).then(res => {
@@ -140,22 +155,59 @@ export default {
       return new Promise(function(resolve, reject){
         axios({
           url: drf.patient.patientImgFileDownload(instanceID),
+=======
+>>>>>>> 0ee2a2675c5e52faa057eeefc27e8a7d0628c71e
           method: 'get',
-          // headers: {
-          //   "Content-Type": "multipart/form-data"
-          // }
           responseType: 'blob',
-          timeout: 5000,
         }).then(res => {
           const blob = URL.createObjectURL(new Blob([res.data], {type:'image/bmp'}));
           console.log(blob);
-          resolve(blob)
+          const div = document.createElement('div');
+          div.style.width = '160px';
+          div.style.height = '90px';
+          div.style.margin = '0 0 0 8px';
+          div.style.border = 'solid 1px #d5dae5';
+          div.style.backgroundColor = '#eaecf2';
+
+          const img = document.createElement('img');
+          img.setAttribute('src', blob);
+          img.style.display = 'block';
+          img.style.width = '90px';
+          img.style.height = '89px';
+          img.style.margin = '0 auto';
+
+          div.appendChild(img);
+          imgBox.appendChild(div);
+          this.iii = blob;
+          // document.getElementById('imgBox').innerHTML = "<img class='img' src=" + blob +" style='pointer-events: none;'/>"
+          return blob;
         })
         .catch((error) => {
-          reject(error);
+          console.log(error);
         });
-      });
     },
+
+    // getImages(instanceID) {
+    //   console.log(instanceID);
+    //   return new Promise(function(resolve, reject){
+    //     axios({
+    //       url: drf.patient.patientImgFileDownload(instanceID),
+    //       method: 'get',
+    //       // headers: {
+    //       //   "Content-Type": "multipart/form-data"
+    //       // }
+    //       responseType: 'blob',
+    //       timeout: 5000,
+    //     }).then(res => {
+    //       const blob = URL.createObjectURL(new Blob([res.data], {type:'image/bmp'}));
+    //       console.log(blob);
+    //       resolve(blob)
+    //     })
+    //     .catch((error) => {
+    //       reject(error);
+    //     });
+    //   });
+    // },
 
     // const res = async () => {
     //   const bty = await axios.get(drf.patient.patientImgFileDownload(instanceID), {responseType: 'blob'});
@@ -170,6 +222,10 @@ export default {
 </script>
 
 <style scoped>
+:root {
+  --test-deg: 3,
+}
+
   .baseUtilityView {
     background-color: yellow;
     width: 100%;
@@ -284,6 +340,7 @@ export default {
     filter: invert(100%);
   }
 
+<<<<<<< HEAD
   /* 4-1, 4-2, 4-3, 4-4*/
   .isOhFSTO {
     transform: rotate(calc(1deg * v-bind('probsdata.status[0]'))) 
@@ -303,4 +360,33 @@ export default {
                 rotateY(calc(1deg * v-bind('probsdata.status[2]')));
   } 
 */
+=======
+  /* 4-1 */
+  .isOhF {
+    transform: rotate( calc(90deg * v-bind('probsdata.status')) );
+  }
+  
+  /* 4-2 */
+  .isOhS {
+    transform: rotate( calc(-90deg * v-bind('probsdata.status')) );
+  }
+
+  /* 4-3 */
+  .isOhT {
+    transform: rotateX( calc(180deg * v-bind('probsdata.status')) )
+  }
+
+  /* 4-4 */
+  .isOhO {
+    transform: rotateY( calc(180deg * v-bind('probsdata.status')) )
+    /* animation: rotate_isOhO 1s linear infinite;
+    transform-origin: 50% 50%; */
+  }
+
+  @keyframes rotate_isOhO {
+    100% {
+      transform: rotateY( 360deg )
+    }
+  }
+>>>>>>> 0ee2a2675c5e52faa057eeefc27e8a7d0628c71e
 </style>
