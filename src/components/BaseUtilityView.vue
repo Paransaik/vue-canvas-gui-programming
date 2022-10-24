@@ -3,13 +3,12 @@
 
     <div class="mainPrintView">
       <!-- <img class="mainImg" :src="mainImg" :class="{isThT:probsdata.status}" /> -->
-      <img class="mainImg" 
-      :src="mainImg" 
-      :class="{isOhF: probsdata.name === '01',
-                isOhS: probsdata.name === '02',
+      <img class="mainImg isOhFSTO" 
+      :src="mainImg"
+      />
+    <!-- :class="{isOhFSTO: probsdata.name === '01' || probsdata.name === '02',
                 isOhT: probsdata.name === '03',
-                isOhO: probsdata.name === '04'}"/>
-
+                isOhO: probsdata.name === '04'}" -->
     </div>
     <div class="thumbnail">
       <div class="filterBtns">
@@ -76,7 +75,6 @@ export default {
     mainImg: ' ',
     isActive: false,
     iii: '',
-    'test': 4,
   }),
 
   computed: {
@@ -137,27 +135,27 @@ export default {
         });
     },
 
-    // getImages(instanceID) {
-    //   console.log(instanceID);
-    //   return new Promise(function(resolve, reject){
-    //     axios({
-    //       url: drf.patient.patientImgFileDownload(instanceID),
-    //       method: 'get',
-    //       // headers: {
-    //       //   "Content-Type": "multipart/form-data"
-    //       // }
-    //       responseType: 'blob',
-    //       timeout: 5000,
-    //     }).then(res => {
-    //       const blob = URL.createObjectURL(new Blob([res.data], {type:'image/bmp'}));
-    //       console.log(blob);
-    //       resolve(blob)
-    //     })
-    //     .catch((error) => {
-    //       reject(error);
-    //     });
-    //   });
-    // },
+    getImages(instanceID) {
+      console.log(instanceID);
+      return new Promise(function(resolve, reject){
+        axios({
+          url: drf.patient.patientImgFileDownload(instanceID),
+          method: 'get',
+          // headers: {
+          //   "Content-Type": "multipart/form-data"
+          // }
+          responseType: 'blob',
+          timeout: 5000,
+        }).then(res => {
+          const blob = URL.createObjectURL(new Blob([res.data], {type:'image/bmp'}));
+          console.log(blob);
+          resolve(blob)
+        })
+        .catch((error) => {
+          reject(error);
+        });
+      });
+    },
 
     // const res = async () => {
     //   const bty = await axios.get(drf.patient.patientImgFileDownload(instanceID), {responseType: 'blob'});
@@ -172,10 +170,6 @@ export default {
 </script>
 
 <style scoped>
-:root {
-  --test-deg: 3,
-}
-
   .baseUtilityView {
     background-color: yellow;
     width: 100%;
@@ -290,31 +284,23 @@ export default {
     filter: invert(100%);
   }
 
-  /* 4-1 */
-  .isOhF {
-    transform: rotate( calc(90deg * v-bind('probsdata.status')) );
+  /* 4-1, 4-2, 4-3, 4-4*/
+  .isOhFSTO {
+    transform: rotate(calc(1deg * v-bind('probsdata.status[0]'))) 
+                rotateX(calc(1deg * v-bind('probsdata.status[1]'))) 
+                rotateY(calc(1deg * v-bind('probsdata.status[2]')));
   }
-  
-  /* 4-2 */
-  .isOhS {
-    transform: rotate( calc(-90deg * v-bind('probsdata.status')) );
-  }
-
-  /* 4-3 */
+/* 
   .isOhT {
-    transform: rotateX( calc(180deg * v-bind('probsdata.status')) )
+    transform: rotate(calc(1deg * v-bind('probsdata.status[0]'))) 
+                rotateX(calc(1deg * v-bind('probsdata.status[1]'))) 
+                rotateY(calc(1deg * v-bind('probsdata.status[2]')));
   }
 
-  /* 4-4 */
   .isOhO {
-    transform: rotateY( calc(180deg * v-bind('probsdata.status')) )
-    /* animation: rotate_isOhO 1s linear infinite;
-    transform-origin: 50% 50%; */
-  }
-
-  @keyframes rotate_isOhO {
-    100% {
-      transform: rotateY( 360deg )
-    }
-  }
+    transform: rotate(calc(1deg * v-bind('probsdata.status[0]'))) 
+                rotateX(calc(1deg * v-bind('probsdata.status[1]')))
+                rotateY(calc(1deg * v-bind('probsdata.status[2]')));
+  } 
+*/
 </style>

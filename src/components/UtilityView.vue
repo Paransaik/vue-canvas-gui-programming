@@ -48,8 +48,8 @@
     <div class="itemBox">
       <div 
         class="item"
-        v-for="(v, k) in fourth" :key="k"
-        @click="fourth[k]++, send('4', k, fourth[k])"
+        v-for="(k, i) in fourth" :key="k"
+        @click="changAngle(i), send('4', k, [ang, rotX, rotY])"
         :class="{isToggle:v}"
         >
         <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
@@ -107,6 +107,9 @@ export default {
   },
 
   data: () => ({
+    ang: 0,
+    rotX: 0,
+    rotY: 0,
     // f
     first: {pan: false, zoom: false, info: false},
     // s
@@ -114,7 +117,7 @@ export default {
     // t
     third: {draw: false, nerve: false},
     // o
-    fourth: {'01': 0, '02': 0, '03': 0, '04': 0},
+    fourth: ['01', '02', '03', '04'],
     // i
     fifth: {'implant-01': false, 'implant-02': false, pontic: false},
     // x
@@ -122,7 +125,28 @@ export default {
   }),
 
   methods: {
-    send(t, n, s){
+    changAngle(e) {
+      if (e == 0) {
+        this.ang = (this.ang + 90) % 360
+      } else if (e == 1) {
+        if (this.ang == 0) this.ang = 360;
+        this.ang = (this.ang - 90) % 360
+      } else if (e == 2) {
+        if (this.ang == 90 || this.ang == 270) {
+          this.rotX = (this.rotX % 360) + 180;
+        } else {
+          this.rotY = (this.rotY % 360) + 180;
+        }
+      } else if (e == 3) {
+        if (this.ang == 0 || this.ang == 180) {
+          this.rotX = (this.rotX % 360) + 180;
+        } else {
+          this.rotY = (this.rotY % 360) + 180;
+        }
+      }
+    },
+
+    send(t, n, s) {
       const datas = {
         type: t,
         name: n,
