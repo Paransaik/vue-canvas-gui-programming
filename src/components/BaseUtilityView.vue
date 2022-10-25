@@ -3,22 +3,12 @@
 
     <div class="mainPrintView">
       <!-- <img class="mainImg" :src="mainImg" :class="{isThT:probsdata.status}" /> -->
-<<<<<<< HEAD
-      <img class="mainImg isOhFSTO" 
+      <img class="mainImg utilityEvent" 
       :src="mainImg"
-      />
+      /> 
     <!-- :class="{isOhFSTO: probsdata.name === '01' || probsdata.name === '02',
                 isOhT: probsdata.name === '03',
                 isOhO: probsdata.name === '04'}" -->
-=======
-      <img class="mainImg" 
-      :src="mainImg" 
-      :class="{isOhF: probsdata.name === '01',
-                isOhS: probsdata.name === '02',
-                isOhT: probsdata.name === '03',
-                isOhO: probsdata.name === '04'}"/>
-
->>>>>>> 0ee2a2675c5e52faa057eeefc27e8a7d0628c71e
     </div>
     <div class="thumbnail">
       <div class="filterBtns">
@@ -38,7 +28,7 @@
       <div class="thumbnailList">
         
     
-      <div class="thumbnailBtn">▼ Thumbnail {{ probsdata }}</div>
+      <div class="thumbnailBtn">▼ Thumbnail {{ probsdata.inverse }} </div>
         <div id="thumbnails" class="thumbnails" @click="mainImg = iii, getImg('1.2.410.200062.2.1.20221013133913452.5.402158.541.502')">
           <!-- <div class="imgBox"
             @click="[mainImg = blobImgList, isActive=!isActive]"
@@ -85,10 +75,6 @@ export default {
     mainImg: ' ',
     isActive: false,
     iii: '',
-<<<<<<< HEAD
-=======
-    'test': 4,
->>>>>>> 0ee2a2675c5e52faa057eeefc27e8a7d0628c71e
   }),
 
   computed: {
@@ -109,54 +95,10 @@ export default {
       Constant.GET_BLOBIMGS,
     ]),
 
-    // changeAction() {
-    //   const style = document.documentElement.style
-    //   style.setProperty('--test-deg', '90deg')
-    // },
-
     getImg(p) {
       const imgBox = document.getElementById('thumbnails');
-
       return axios({
           url: drf.patient.patientImgFileDownload(p),
-<<<<<<< HEAD
-          method: 'get',
-          responseType: 'blob',
-        }).then(res => {
-          const blob = URL.createObjectURL(new Blob([res.data], {type:'image/bmp'}));
-          console.log(blob);
-          const div = document.createElement('div');
-          div.style.width = '160px';
-          div.style.height = '90px';
-          div.style.margin = '0 0 0 8px';
-          div.style.border = 'solid 1px #d5dae5';
-          div.style.backgroundColor = '#eaecf2';
-
-          const img = document.createElement('img');
-          img.setAttribute('src', blob);
-          img.style.display = 'block';
-          img.style.width = '90px';
-          img.style.height = '89px';
-          img.style.margin = '0 auto';
-
-          div.appendChild(img);
-          imgBox.appendChild(div);
-          this.iii = blob;
-          // document.getElementById('imgBox').innerHTML = "<img class='img' src=" + blob +" style='pointer-events: none;'/>"
-          return blob;
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    },
-
-    getImages(instanceID) {
-      console.log(instanceID);
-      return new Promise(function(resolve, reject){
-        axios({
-          url: drf.patient.patientImgFileDownload(instanceID),
-=======
->>>>>>> 0ee2a2675c5e52faa057eeefc27e8a7d0628c71e
           method: 'get',
           responseType: 'blob',
         }).then(res => {
@@ -222,10 +164,6 @@ export default {
 </script>
 
 <style scoped>
-:root {
-  --test-deg: 3,
-}
-
   .baseUtilityView {
     background-color: yellow;
     width: 100%;
@@ -335,58 +273,15 @@ export default {
     border: solid 2px blue;
   }
 
-  /* 2-2 */
-  .isThT {
-    filter: invert(100%);
+  .utilityEvent {
+    /* 2-2 */
+    /* filter: invert(calc(1% * v-bind('probsdata.inverse'))); */
+    filter: brightness(calc(1% * v-bind('probsdata.inverse')/ 6));
+
+    /* 4-1, 4-2, 4-3, 4-4*/
+    transform: rotate(calc(1deg * v-bind('probsdata.angle[0]'))) 
+                rotateX(calc(1deg * v-bind('probsdata.angle[1]'))) 
+                rotateY(calc(1deg * v-bind('probsdata.angle[2]')));
   }
 
-<<<<<<< HEAD
-  /* 4-1, 4-2, 4-3, 4-4*/
-  .isOhFSTO {
-    transform: rotate(calc(1deg * v-bind('probsdata.status[0]'))) 
-                rotateX(calc(1deg * v-bind('probsdata.status[1]'))) 
-                rotateY(calc(1deg * v-bind('probsdata.status[2]')));
-  }
-/* 
-  .isOhT {
-    transform: rotate(calc(1deg * v-bind('probsdata.status[0]'))) 
-                rotateX(calc(1deg * v-bind('probsdata.status[1]'))) 
-                rotateY(calc(1deg * v-bind('probsdata.status[2]')));
-  }
-
-  .isOhO {
-    transform: rotate(calc(1deg * v-bind('probsdata.status[0]'))) 
-                rotateX(calc(1deg * v-bind('probsdata.status[1]')))
-                rotateY(calc(1deg * v-bind('probsdata.status[2]')));
-  } 
-*/
-=======
-  /* 4-1 */
-  .isOhF {
-    transform: rotate( calc(90deg * v-bind('probsdata.status')) );
-  }
-  
-  /* 4-2 */
-  .isOhS {
-    transform: rotate( calc(-90deg * v-bind('probsdata.status')) );
-  }
-
-  /* 4-3 */
-  .isOhT {
-    transform: rotateX( calc(180deg * v-bind('probsdata.status')) )
-  }
-
-  /* 4-4 */
-  .isOhO {
-    transform: rotateY( calc(180deg * v-bind('probsdata.status')) )
-    /* animation: rotate_isOhO 1s linear infinite;
-    transform-origin: 50% 50%; */
-  }
-
-  @keyframes rotate_isOhO {
-    100% {
-      transform: rotateY( 360deg )
-    }
-  }
->>>>>>> 0ee2a2675c5e52faa057eeefc27e8a7d0628c71e
 </style>

@@ -22,18 +22,20 @@ export default {
 
   data: () => ({
     datas: {
-      type: '',
-      name: '',
-      status: '',
+      type: {'name': '', 'state': ''},
+      inverse: 0,
+      angle: [],
     },
 
   }),
 
   methods: {
     sendDatas(d) {
+      console.log(d.type);
       this.datas.type = d.type;
-      this.datas.name = d.name;
-      this.datas.status = d.status;
+      this.datas.inverse = d.inverse;
+      this.datas.angle = d.angle;
+      console.log(this.datas.type);
     }
   },
   
