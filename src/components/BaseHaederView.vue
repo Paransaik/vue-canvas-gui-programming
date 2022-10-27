@@ -46,7 +46,7 @@ export default {
   .baseHeaderView {
     background-color: orange;
     width: auto;
-    height: auto;
+    height: 100%;
     display: flex;
   }
 </style>

@@ -23,9 +23,10 @@ export default {
 <style>
 
 .homeContainer {
+  margin: 10px;
   border: solid black 1px;
   /* border: 1px dotted red; */
-  height: auto;
+  height: 800px;
   display: flex;
   flex-direction: column;
 }

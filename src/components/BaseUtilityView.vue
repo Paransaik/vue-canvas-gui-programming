@@ -10,8 +10,8 @@
                 isOhT: probsdata.name === '03',
                 isOhO: probsdata.name === '04'}" -->
     </div>
-    <div class="thumbnail">
-      <div class="filterBtns">
+    <div class="thumbnail" :class="{thumbList:btnchg}">
+      <div class="filterBtns" :class="{filterCng:btnchg}">
         <div>
           <span class="filterName">Date</span>
           <select class="filterSelect">
@@ -25,11 +25,14 @@
           </select>
         </div>
       </div>
-      <div class="thumbnailList">
-        
+      <div class="thumbnailList" :class="{ListCng:btnchg}">
     
-      <div class="thumbnailBtn">▼ Thumbnail {{ probsdata.inverse }} </div>
-        <div id="thumbnails" class="thumbnails" @click="mainImg = iii, getImg('1.2.410.200062.2.1.20221013133913452.5.402158.541.502')">
+      <div class="thumbnailBtn" 
+        @click="btnchg = !btnchg"> {{ btnchg ? "▲" : "▼" }} Thumbnail {{ probsdata.inverse }} </div>
+        <div id="thumbnails" 
+        class="thumbnails" 
+        :class="{thumbnailsCng:btnchg}" 
+        @click="mainImg = iii, getImg('1.2.410.200062.2.1.20221013133913452.5.402158.541.502')">
           <!-- <div class="imgBox"
             @click="[mainImg = blobImgList, isActive=!isActive]"
             :class="{isToggle:isActive}"
@@ -75,6 +78,7 @@ export default {
     mainImg: ' ',
     isActive: false,
     iii: '',
+    btnchg : false,
   }),
 
   computed: {
@@ -174,12 +178,12 @@ export default {
   }
 
   .mainPrintView {
-    height: 700px;
+    height: 100%;
     margin: 0 auto;
   }
 
   .mainImg {
-    height: 700px;
+    height: 100%;
   }
 
   .thumbnail {
@@ -240,9 +244,10 @@ export default {
     line-height: normal;
     letter-spacing: -0.46px;
     text-align: center;
+    cursor: pointer;
     color: #96a2b3;
   }
-
+  
   .thumbnails{
     display: flex;
     flex-direction: row;
@@ -254,6 +259,28 @@ export default {
     background-color: #f4f6f9;
   }
 
+  /* HS */
+  .mainCng{
+    height: 100%;
+  }
+
+  .thumbList{
+    height: 16px;
+  }
+
+  .ListCng{
+    height: auto;
+  }
+
+  .filterCng{
+    display: none;
+  }
+  
+  .thumbnailsCng{
+    display: none;
+  }
+  /* end */
+  
   .imgBox {
     display: flex;
     flex-direction: col;
@@ -274,9 +301,18 @@ export default {
   }
 
   .utilityEvent {
+    /* 1-1 */
+    /* filter: translate(calc(1% * v-bind('probsdata.inverse') / 6)); */
+
+    /* 1-2 */
+    /* filter: scale(calc(1% * v-bind('probsdata.inverse') / 6)); */
+
+    /* 2-1 */
+    /* filter: brightness(calc(1% * v-bind('probsdata.inverse') / 6)); */
+
     /* 2-2 */
     /* filter: invert(calc(1% * v-bind('probsdata.inverse'))); */
-    filter: brightness(calc(1% * v-bind('probsdata.inverse')/ 6));
+    
 
     /* 4-1, 4-2, 4-3, 4-4*/
     transform: rotate(calc(1deg * v-bind('probsdata.angle[0]'))) 
