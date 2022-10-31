@@ -1,11 +1,38 @@
 <template>
   <div class="baseUtilityView">
 
-    <div class="mainPrintView">
+    <div class="mainPrintView" id="canvas">
+      <vue-drawing-canvas
+        ref="VueCanvasDrawing"
+        v-model:image="image"
+        :height="fullHeight"
+        :width="fullWidth"
+        :stroke-type="strokeType"
+        :fill-shape="fillShape"
+        :lineWidth="line"
+        :color="color"
+        :background-image="backgroundImage"
+        
+        saveAs="png"
+        @mousemove="getCoordinate($event)"
+        line-cap="round"
+        line-join="round"
+        
+        :initial-image="initialImage"
+        :styles="{
+          'object-fit': scale-down,
+          border: 'solid 1px #FF0000',
+        }"
+      />
       <!-- <img class="mainImg" :src="mainImg" :class="{isThT:probsdata.status}" /> -->
-      <img class="mainImg utilityEvent" 
+        <!-- 
+          :width="600"
+          @resize="canvasReszie()" 
+        -->
+
+      <!-- <img class="mainImg utilityEvent" 
       :src="mainImg"
-      /> 
+      />  -->
     <!-- :class="{isOhFSTO: probsdata.name === '01' || probsdata.name === '02',
                 isOhT: probsdata.name === '03',
                 isOhO: probsdata.name === '04'}" -->
@@ -27,8 +54,11 @@
       </div>
       <div class="thumbnailList" :class="{ListCng:btnchg}">
     
-      <div class="thumbnailBtn" 
-        @click="btnchg = !btnchg"> {{ btnchg ? "▲" : "▼" }} Thumbnail {{ probsdata.inverse }} </div>
+        <div class="thumbnailBtn" 
+          @click="btnchg = !btnchg"> {{ btnchg ? "▲" : "▼" }} Thumbnail {{ probsdata.inverse }}
+            x-axis: <strong>{{ x }}</strong
+            >, y-axis: <strong>{{ y }}</strong>
+        </div>
         <div id="thumbnails" 
         class="thumbnails" 
         :class="{thumbnailsCng:btnchg}" 
@@ -56,7 +86,6 @@
           <!-- </div> -->
         </div>
       </div>
-
     </div>
   </div>
 </template>
@@ -66,27 +95,69 @@ import axios from "axios"
 import drf from '@/api/drf'
 import { mapGetters, mapActions } from 'vuex';
 import Constant from "@/common/Constant.js";
+import VueDrawingCanvas from "vue-drawing-canvas";
 
 export default {
   name: 'BaseUtilityView',
+
+  components: {
+    VueDrawingCanvas,
+  },
 
   props: [
     'probsdata',
   ],
 
   data: () => ({
+    fullHeight: document.documentElement.clientHeight,
+    fullWidth: document.documentElement.clientwidth,
+
     mainImg: ' ',
     isActive: false,
     iii: '',
     btnchg : false,
+
+    // canvas
+    initialImage: [
+      {
+        type: "dash",
+        from: {
+          x: 262,
+          y: 154,
+        },
+        coordinates: [],
+        color: "#000000",
+        width: 5,
+        fill: false,
+      },
+    ],
+    x: 0,
+    y: 0,
+    image: "",
+    strokeType: "dash",
+    fillShape: false,
+    line: 5,
+    // color: "#000000",
+    color: "#FF0000",
+    backgroundImage: null,
   }),
+
+  mounted() {
+    this.fullHeight = document.getElementById('canvas').clientHeight;
+    this.fullWidth = document.getElementById('canvas').clientWidth;
+
+    if ("vue-drawing-canvas" in window.localStorage) {
+      this.initialImage = JSON.parse(
+        window.localStorage.getItem("vue-drawing-canvas")
+      );
+    }
+  },
 
   computed: {
     ...mapGetters([
       'patientSeriesList',
       'blobImgList',
     ]),
-    
 
   },
 
@@ -99,13 +170,25 @@ export default {
       Constant.GET_BLOBIMGS,
     ]),
 
+    async setImage(event) {
+      let URL = window.URL;
+      this.backgroundImage = URL.createObjectURL(event.target.files[0]);
+      await this.$refs.VueCanvasDrawing.redraw();
+    },
+
+    getCoordinate(event) {
+      let coordinates = this.$refs.VueCanvasDrawing.getCoordinates(event);
+      this.x = coordinates.x;
+      this.y = coordinates.y;
+    },
+
     getImg(p) {
       const imgBox = document.getElementById('thumbnails');
       return axios({
           url: drf.patient.patientImgFileDownload(p),
           method: 'get',
           responseType: 'blob',
-        }).then(res => {
+        }).then(async res => {
           const blob = URL.createObjectURL(new Blob([res.data], {type:'image/bmp'}));
           console.log(blob);
           const div = document.createElement('div');
@@ -125,8 +208,19 @@ export default {
           div.appendChild(img);
           imgBox.appendChild(div);
           this.iii = blob;
+          this.backgroundImage = blob;
+          
+          var cvs = document.getElementById("canvas").childNodes[0];
+          var cctx = cvs.getContext("2d");
+          window.onload =  function () {
+             cctx.drawImage(blob, 100, 100);
+          };
+  
+          // await this.$refs.VueCanvasDrawing.redraw();
           // document.getElementById('imgBox').innerHTML = "<img class='img' src=" + blob +" style='pointer-events: none;'/>"
           return blob;
+
+          
         })
         .catch((error) => {
           console.log(error);
@@ -171,27 +265,28 @@ export default {
   .baseUtilityView {
     background-color: yellow;
     width: 100%;
-    height: 100%;
+    /* height: 100%; */
     display: flex;
     flex-direction: column;
-    background-color: black;
+    justify-content: flex-start;
   }
 
   .mainPrintView {
-    height: 100%;
+    /* height: 100%; */
+    height: 578px;
+    width: 1245px;
     margin: 0 auto;
   }
 
-  .mainImg {
+  /* .mainImg {
     height: 100%;
-  }
+  } */
 
   .thumbnail {
     display: flex;
     flex-direction: row;
     height: 140px;
     width: auto;
-    border: solid 1px #adbed9
   }
 
   .filterBtns{ 
@@ -199,7 +294,7 @@ export default {
     flex-direction: column;
     justify-content: space-between;
     width: 148px;
-    height: 138px;
+    height: 140px;
     padding: 12px 16px 16px 16px;
     background-color: #d8dde8;
   }
@@ -235,7 +330,6 @@ export default {
   .thumbnailBtn{
     width: auto;
     height: 16px;
-    padding: 0px 0px;
     font-family: MalgunGothic;
     font-size: 11px;
     font-weight: bold;

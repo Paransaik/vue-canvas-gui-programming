@@ -23,7 +23,6 @@ export default {
 <style>
 
 .homeContainer {
-  margin: 10px;
   border: solid black 1px;
   /* border: 1px dotted red; */
   height: 800px;
