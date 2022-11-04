@@ -1,31 +1,33 @@
 <template>
   <div class="baseUtilityView">
-
+    <img :src="mainImg" class="mainImg utilityEvent"/>
     <div class="mainPrintView" id="canvas">
-      <VueDrawingCanvas
-        ref="VueCanvasDrawing"
-        v-model:image="image"
-        :height="fullHeight"
-        :width="fullWidth"
-        :stroke-type="strokeType"
-        :fill-shape="fillShape"
-        :lineWidth="line"
-        :color="color"
-        :backgroundImage="backgroundImage"
-        backgroundColor="black"
-        @mousemove="getCoordinate($event)"
-        saveAs="png"
-        
-        line-cap="round"
-        line-join="round"
-        :initial-image="initialImage"
-        classes="utilityEvent"
-        
-        :styles="{
-          // border: 'solid 1px #FF0000',
-          objectFit: 'fill',
-        }"
-      />
+        <VueDrawingCanvas
+          ref="VueCanvasDrawing"
+          v-model:image="image"
+          :height="fullHeight"
+          :width="fullWidth"
+          :stroke-type="strokeType"
+          :fill-shape="fillShape"
+          :lineWidth="line"
+          :color="color"
+          :backgroundImage="backgroundImage"
+          @mousemove="getCoordinate($event)"
+          saveAs="png"
+          
+          line-cap="round"
+          line-join="round"
+          :initial-image="initialImage"
+          classes="canvasEvent"
+          
+          :styles="{
+            border: 'solid 1px #FF0000',
+            // objectFit: 'fill',
+          }"
+        />
+      <!-- 
+          backgroundColor="black"
+       -->
     </div>
     <div class="thumbnail" :class="{thumbList:btnchg}">
       <div class="filterBtns" :class="{filterCng:btnchg}">
@@ -48,12 +50,11 @@
       </div>
       <div class="thumbnailList" :class="{ListCng:btnchg}">
     
-        <div class="thumbnailBtn" @click="btnchg = !btnchg"> {{ btnchg ? "▲" : "▼" }} Thumbnail
-        </div>
+      <div class="thumbnailBtn" @click="btnchg = !btnchg"> {{ btnchg ? "▲" : "▼" }} Thumbnail</div>
         <div id="thumbnails" 
         class="thumbnails" 
         :class="{thumbnailsCng:btnchg}" 
-        @click="mainImg = iii, getImg('1.2.410.200062.2.1.20221013133913452.5.402158.541.502')">
+        @click="getImg('1.2.410.200062.2.1.20221013133913452.5.402158.541.502')">
           <!-- <div class="imgBox"
             @click="[mainImg = blobImgList, isActive=!isActive]"
             :class="{isToggle:isActive}"
@@ -107,7 +108,6 @@ export default {
 
     mainImg: ' ',
     isActive: false,
-    iii: '',
     btnchg : false,
 
     // canvas
@@ -202,7 +202,7 @@ export default {
           responseType: 'blob',
         }).then(async res => {
           const blob = URL.createObjectURL(new Blob([res.data], {type:'image/bmp'}));
-          console.log(blob);
+          // console.log(blob);
           const div = document.createElement('div');
           div.style.width = '160px';
           div.style.height = '90px';
@@ -219,22 +219,21 @@ export default {
 
           div.appendChild(img);
           imgBox.appendChild(div);
-          this.iii = blob;
-          this.backgroundImage = blob;
+          this.mainImg = blob;
+          // this.backgroundImage = blob;
 
           // this.fullWidth = this.fullHeight;
-          // var cvs = document.getElementById("canvas").childNodes[0];
+          // var cvs = document.getElementById("VueDrawingCanvas");
           // var ctx = cvs.getContext("2d");
           
           // const imggg = new Image();
           // imggg.src = blob;
-          // // ctx.drawImage(imggg, (cvs.width -  cvs.height) / 2, 0, cvs.height, cvs.height);
 
           // imggg.onload = () => {
           //   ctx.drawImage(imggg, (cvs.width -  cvs.height) / 2, 0, cvs.height, cvs.height);
           // }
           
-          await this.$refs.VueCanvasDrawing.redraw();
+          // await this.$refs.VueCanvasDrawing.redraw();
           // document.getElementById('imgBox').innerHTML = "<img class='img' src=" + blob +" style='pointer-events: none;'/>"
           return blob;
 
@@ -281,13 +280,14 @@ export default {
 
 <style scoped>
   .baseUtilityView {
-    background-color: yellow;
+    background-color: black;
     height: 718px;
     width: 100%;
     display: flex;
     overflow: auto;
     flex-direction: column;
     justify-content: flex-start;
+    position: relative;
   }
 
   .mainPrintView {
@@ -301,6 +301,18 @@ export default {
     overflow: hidden;
     display: flex;
     justify-content: center;
+  }
+  
+  .mainImg {
+    border: 1px solid blue;
+
+    /* filter: invert(calc(1% * v-bind('propsdata.inverse'))); */
+
+    height: calc(1px * v-bind(fullHeight));
+    width: calc(1px * v-bind(fullHeight));
+    position: absolute;
+    left: calc(1px * ((v-bind(fullWidth) - v-bind(fullHeight)) / 2));
+    z-index: 0;
   }
 
   .thumbnail {
@@ -434,4 +446,12 @@ export default {
                 rotateY(calc(1deg * v-bind('propsdata.angle[2]')));
   }
 
+  .canvasEvent {
+    z-index: 10;
+
+    transform: rotate(calc(1deg * v-bind('propsdata.angle[0]'))) 
+                rotateX(calc(1deg * v-bind('propsdata.angle[1]'))) 
+                rotateY(calc(1deg * v-bind('propsdata.angle[2]')));
+  }
 </style>
+
