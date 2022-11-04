@@ -3,8 +3,8 @@
     <!-- datas: 받은 자식 datas -->
     <UtilityView @datas="sendDatas"/> 
     <!-- datas: 넘길 자식 datas(현재 data에 있는 값)-->
-    <!-- probsdata: 자식에서 사용할 변수 이름 -->
-    <BaseUtilityView :probsdata="datas"/>
+    <!-- propsdata: 자식에서 사용할 변수 이름 -->
+    <BaseUtilityView :propsdata="datas"/>
   </div>
 </template>
 
@@ -31,7 +31,6 @@ export default {
 
   methods: {
     sendDatas(d) {
-      console.log(d.type);
       this.datas.type = d.type;
       this.datas.inverse = d.inverse;
       this.datas.angle = d.angle;

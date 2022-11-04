@@ -2,7 +2,7 @@
   <div class="baseUtilityView">
 
     <div class="mainPrintView" id="canvas">
-      <vue-drawing-canvas
+      <VueDrawingCanvas
         ref="VueCanvasDrawing"
         v-model:image="image"
         :height="fullHeight"
@@ -11,40 +11,34 @@
         :fill-shape="fillShape"
         :lineWidth="line"
         :color="color"
-        :background-image="backgroundImage"
-        
-        saveAs="png"
+        :backgroundImage="backgroundImage"
+        backgroundColor="black"
         @mousemove="getCoordinate($event)"
+        saveAs="png"
+        
         line-cap="round"
         line-join="round"
-        
         :initial-image="initialImage"
+        classes="utilityEvent"
+        
         :styles="{
-          'object-fit': scale-down,
-          border: 'solid 1px #FF0000',
+          // border: 'solid 1px #FF0000',
+          objectFit: 'fill',
         }"
       />
-      <!-- <img class="mainImg" :src="mainImg" :class="{isThT:probsdata.status}" /> -->
-        <!-- 
-          :width="600"
-          @resize="canvasReszie()" 
-        -->
-
-      <!-- <img class="mainImg utilityEvent" 
-      :src="mainImg"
-      />  -->
-    <!-- :class="{isOhFSTO: probsdata.name === '01' || probsdata.name === '02',
-                isOhT: probsdata.name === '03',
-                isOhO: probsdata.name === '04'}" -->
     </div>
     <div class="thumbnail" :class="{thumbList:btnchg}">
       <div class="filterBtns" :class="{filterCng:btnchg}">
         <div>
-          <span class="filterName">Date</span>
+          <span class="filterName">Date
+            x-axis: <strong>{{ x }}</strong
+            >, y-axis: <strong>{{ y }}</strong>
+          </span>
           <select class="filterSelect">
             <option>All</option>
           </select>
         </div>
+        {{propsdata}}
         <div>
           <span class="filterName">Modality</span>
           <select class="filterSelect">
@@ -54,10 +48,7 @@
       </div>
       <div class="thumbnailList" :class="{ListCng:btnchg}">
     
-        <div class="thumbnailBtn" 
-          @click="btnchg = !btnchg"> {{ btnchg ? "▲" : "▼" }} Thumbnail {{ probsdata.inverse }}
-            x-axis: <strong>{{ x }}</strong
-            >, y-axis: <strong>{{ y }}</strong>
+        <div class="thumbnailBtn" @click="btnchg = !btnchg"> {{ btnchg ? "▲" : "▼" }} Thumbnail
         </div>
         <div id="thumbnails" 
         class="thumbnails" 
@@ -105,12 +96,14 @@ export default {
   },
 
   props: [
-    'probsdata',
+    'propsdata',
   ],
 
   data: () => ({
-    fullHeight: document.documentElement.clientHeight,
-    fullWidth: document.documentElement.clientwidth,
+    fullHeight: 0,
+    fullWidth: 0,
+    fixedHeight: 0,
+    fixedWidth: 0,
 
     mainImg: ' ',
     isActive: false,
@@ -143,8 +136,11 @@ export default {
   }),
 
   mounted() {
+    // this.fullHeight = document.getElementById('canvas').clientWidth;
     this.fullHeight = document.getElementById('canvas').clientHeight;
     this.fullWidth = document.getElementById('canvas').clientWidth;
+    this.fixedHeight = this.fullHeight;
+    this.fixedWidth = this.fullWidth;
 
     if ("vue-drawing-canvas" in window.localStorage) {
       this.initialImage = JSON.parse(
@@ -158,9 +154,25 @@ export default {
       'patientSeriesList',
       'blobImgList',
     ]),
-
   },
 
+  watch: {
+    // propsdata: {
+    //   deep: true,
+    //   handler() {
+    //     if (this.propsdata.angle[0] == 90 || this.propsdata.angle[0] == 270) {
+    //       this.fullHeight = this.fixedWidth;
+    //       this.fullWidth = this.fixedHeight;
+    //     } else {
+    //       console.log('180 or 360');
+    //       this.fullHeight = this.fixedHeight;
+    //       this.fullWidth = this.fixedWidth;
+    //     }
+    //     this.$refs.VueCanvasDrawing.redraw();
+    //   }
+    // },
+  },
+  
   created() {
   },
 
@@ -209,14 +221,20 @@ export default {
           imgBox.appendChild(div);
           this.iii = blob;
           this.backgroundImage = blob;
+
+          // this.fullWidth = this.fullHeight;
+          // var cvs = document.getElementById("canvas").childNodes[0];
+          // var ctx = cvs.getContext("2d");
           
-          var cvs = document.getElementById("canvas").childNodes[0];
-          var cctx = cvs.getContext("2d");
-          window.onload =  function () {
-             cctx.drawImage(blob, 100, 100);
-          };
-  
-          // await this.$refs.VueCanvasDrawing.redraw();
+          // const imggg = new Image();
+          // imggg.src = blob;
+          // // ctx.drawImage(imggg, (cvs.width -  cvs.height) / 2, 0, cvs.height, cvs.height);
+
+          // imggg.onload = () => {
+          //   ctx.drawImage(imggg, (cvs.width -  cvs.height) / 2, 0, cvs.height, cvs.height);
+          // }
+          
+          await this.$refs.VueCanvasDrawing.redraw();
           // document.getElementById('imgBox').innerHTML = "<img class='img' src=" + blob +" style='pointer-events: none;'/>"
           return blob;
 
@@ -264,23 +282,26 @@ export default {
 <style scoped>
   .baseUtilityView {
     background-color: yellow;
+    height: 718px;
     width: 100%;
-    /* height: 100%; */
     display: flex;
+    overflow: auto;
     flex-direction: column;
     justify-content: flex-start;
   }
 
   .mainPrintView {
-    /* height: 100%; */
-    height: 578px;
-    width: 1245px;
-    margin: 0 auto;
-  }
+    /* object-fit: contain; */
+    /* object-fit: cover; */
+    /* object-fit: scale-down; */
+    /* object-fit: fill; */
 
-  /* .mainImg {
     height: 100%;
-  } */
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+  }
 
   .thumbnail {
     display: flex;
@@ -396,22 +417,21 @@ export default {
 
   .utilityEvent {
     /* 1-1 */
-    /* filter: translate(calc(1% * v-bind('probsdata.inverse') / 6)); */
+    /* filter: translate(calc(1% * v-bind('propsdata.inverse') / 6)); */
 
     /* 1-2 */
-    /* filter: scale(calc(1% * v-bind('probsdata.inverse') / 6)); */
+    /* filter: scale(calc(1% * v-bind('propsdata.inverse') / 6)); */
 
     /* 2-1 */
-    /* filter: brightness(calc(1% * v-bind('probsdata.inverse') / 6)); */
+    /* filter: brightness(calc(1% * v-bind('propsdata.inverse') / 6)); */
 
     /* 2-2 */
-    /* filter: invert(calc(1% * v-bind('probsdata.inverse'))); */
-    
+    filter: invert(calc(1% * v-bind('propsdata.inverse')));
 
     /* 4-1, 4-2, 4-3, 4-4*/
-    transform: rotate(calc(1deg * v-bind('probsdata.angle[0]'))) 
-                rotateX(calc(1deg * v-bind('probsdata.angle[1]'))) 
-                rotateY(calc(1deg * v-bind('probsdata.angle[2]')));
+    transform: rotate(calc(1deg * v-bind('propsdata.angle[0]'))) 
+                rotateX(calc(1deg * v-bind('propsdata.angle[1]'))) 
+                rotateY(calc(1deg * v-bind('propsdata.angle[2]')));
   }
 
 </style>
