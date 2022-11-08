@@ -95,6 +95,7 @@ export default createStore({
         // console.log(newArr);
 
         // commit(Constant.SET_BLOBIMGS, imgList);
+        console.log(newArr);
         commit(Constant.SET_PATIENTSERIESLIST, newArr);
       })
       .catch(err => console.error(err))

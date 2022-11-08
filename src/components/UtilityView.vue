@@ -19,7 +19,7 @@
       <div 
         class="item"
         v-for="(v, k) in second" :key="k"
-        @click="[second[k] = !v, utilityEvent(k), send({'name' : k, 'state' : v }, inverse, [ang, rotX, rotY])]"
+        @click="[second[k] = !v, send2({'name' : k, 'state' : v }, inverse, [ang, rotX, rotY])]"
         :class="{isToggle:v}"
         >
         <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
@@ -37,9 +37,11 @@
         >
         <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
       </div>
-      <div class="item"><div class="color"></div></div>
-      <select class="colorSelect same">
-        <option>얇은 선</option>
+      <div><input type="color" class="item" value="#FF0000" @change="sendColor"/></div>
+      <select class="colorSelect same" @change="sendLine">
+        <option v-for="n in 25" :key="n" :value="n">
+          {{ n }}
+        </option>
       </select>
     </div>
     <div class="line"></div>
@@ -49,7 +51,7 @@
       <div 
         class="item"
         v-for="(k, i) in fourth" :key="k"
-        @click="utilityEvent(i), send({'name' : k, 'state' : i }, inverse, [ang, rotX, rotY])"
+        @click="changedAngle(i), sendAngle({'name' : k, 'state' : i }, [ang, rotX, rotY])"
         >
         <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
       </div>
@@ -127,45 +129,66 @@ export default {
   }),
 
   methods: {
-    send(t, i, a) {
-      // {'first': [{'name' : k}, {'state' : v }]}, [ang, rotX, rotY]
+    // 2
+    send2(t, i, a) {
+      // {{'name' : k}, {'state' : v }], [ang, rotX, rotY]
       const datas = {
-        type: t,
         inverse: i,
         angle: a,
       };
       this.$emit('datas', datas);
     },
 
-    utilityEvent(e) {
+    sendColor(e) {
+      // console.log(e.target.value)
+      this.$emit('selectedColor', e.target.value);
+    },
+
+    sendLine(l) {
+      this.$emit('selectedLine', parseInt(l.target.value));
+      console.log('call by sendLne')
+      console.log(l.target.value)
+    },
+
+    // 4
+    changedAngle(e) {
       // Change Inverse
       // 2-2
-      if (e == 'inverse') {
-        if (this.second[e] == true) this.inverse = 100;
+      if (e === 'inverse') {
+        if (this.second[e] === true) this.inverse = 100;
         else this.inverse = 0;
       }
 
       // Change Angle
       // 4-1, 4-2, 4-3, 4-4
       // @click="utilityEvent(i), send({'name' : k, 'state' : i }, [ang, rotX, rotY])"
-      if (e == 0) {
+      if (e === 0) {
         this.ang = (this.ang + 90) % 360
-      } else if (e == 1) {
-        if (this.ang == 0) this.ang = 360;
+      } else if (e === 1) {
+        if (this.ang === 0) this.ang = 360;
         this.ang = (this.ang - 90) % 360
-      } else if (e == 2) {
-        if (this.ang == 90 || this.ang == 270) {
+      } else if (e === 2) {
+        if (this.ang === 90 || this.ang === 270) {
           this.rotX = (this.rotX % 360) + 180;
         } else {
           this.rotY = (this.rotY % 360) + 180;
         }
-      } else if (e == 3) {
-        if (this.ang == 0 || this.ang == 180) {
+      } else if (e === 3) {
+        if (this.ang === 0 || this.ang === 180) {
           this.rotX = (this.rotX % 360) + 180;
         } else {
           this.rotY = (this.rotY % 360) + 180;
         }
       }
+    },
+
+    // 4
+    sendAngle(t, a) {
+      const selectedAngle = {
+        type: t,
+        angle: a
+      }
+      this.$emit('selectedAngle', selectedAngle);
     },
 
     
@@ -253,13 +276,6 @@ export default {
     text-align: center;
     color: #000;
    }
-
-  .color {
-    width: 18px;
-    height: 18px;
-    border-radius: 4px;
-    background-color: #f00;
-  }
 
   .colorSelect {
     width: 69px;
