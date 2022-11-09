@@ -14,9 +14,6 @@ export default createStore({
     patientRecordList: [],
 
     patientRecordFilenameList: [],
-
-    blobImgList: ['t'],
-
   },
 
   getters: {
@@ -27,8 +24,6 @@ export default createStore({
     patientRecordList: state => state.patientRecordList,
 
     patientRecordFilenameList: state => state.patientRecordFilenameList,
-
-    blobImgList: state => state.blobImgList,
   },
 
   mutations: {
@@ -39,8 +34,6 @@ export default createStore({
     [Constant.SET_PATIENTRECORDLIST]: (state, patientRecordList) => state.patientRecordList = patientRecordList,
 
     [Constant.SET_PATIENTRECORDFILENAMELIST]: (state, patientRecordFilenameList) => state.patientRecordFilenameList = patientRecordFilenameList,
-
-    [Constant.SET_BLOBIMGS]: (state, blobImgList) => state.blobImgList = blobImgList,
   },
 
   actions: {
@@ -64,37 +57,9 @@ export default createStore({
       .then(res => {
         // res.data.Result.SeriesList.Entities = instanceUid list
         const datas = res.data.Result.SeriesList.Entities;
-        // const imgList = [];
-
         const newArr = datas.map(element => {
-          // const p = new Promise(function(resolve, reject){
-          //   axios({
-          //     url: drf.patient.patientImgFileDownload(element.UniqueID),
-          //     method: 'get',
-          //     // headers: {
-          //     //   "Content-Type": "multipart/form-data"
-          //     // }
-          //     responseType: 'blob',
-
-          //   }).then(res => {
-          //     const blob = URL.createObjectURL(new Blob([res.data], {type:'image/bmp'}));
-          //     resolve(blob)
-          //   })
-          //   .catch((error) => {
-          //     reject(error);
-          //   });
-
-          // });
-
-          // p.then((data) => {imgList.push(data)});
-          
           return element.UniqueID;
         });
-
-        // console.log(imgList);
-        // console.log(newArr);
-
-        // commit(Constant.SET_BLOBIMGS, imgList);
         console.log(newArr);
         commit(Constant.SET_PATIENTSERIESLIST, newArr);
       })
