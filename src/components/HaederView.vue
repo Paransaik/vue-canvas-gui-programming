@@ -54,7 +54,7 @@ import Constant from "@/common/Constant";
 
 export default {
   name: 'HeaderView',
-  
+
   data: () => ({
     // isOpen: false,
     // results: [],
@@ -69,7 +69,6 @@ export default {
   computed: {
     ...mapGetters([
       'allPatientList',
-      'patientName',
       'patientSeriesList',
       'patientRecordList',
       'patientRecordFilenameList',
@@ -145,7 +144,7 @@ export default {
   // mounted() {
   //   document.addEventListener("click", this.handleClickOutside);
   // },
-  
+
   // destroyed() {
   //   document.removeEventListener("click", this.handleClickOutside);
   // },

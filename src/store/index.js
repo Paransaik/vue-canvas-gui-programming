@@ -9,7 +9,7 @@ export default createStore({
     // [] 배열, {} 맵
     allPatientList: [],
 
-    patientSeriesList: [],
+    patientSeriesList: {},
 
     patientRecordList: [],
 
@@ -56,12 +56,15 @@ export default createStore({
       })
       .then(res => {
         // res.data.Result.SeriesList.Entities = instanceUid list
-        const datas = res.data.Result.SeriesList.Entities;
-        const newArr = datas.map(element => {
-          return element.UniqueID;
-        });
-        console.log(newArr);
-        commit(Constant.SET_PATIENTSERIESLIST, newArr);
+        const datas = {
+          entity: res.data.Result.SeriesList.Entities,
+          chartId: uid.target.value
+        }
+        // const newArr = datas.map(element => {
+        //   return element.UniqueID;
+        // });
+        // console.log(newArr);
+        commit(Constant.SET_PATIENTSERIESLIST, datas);
       })
       .catch(err => console.error(err))
     },
