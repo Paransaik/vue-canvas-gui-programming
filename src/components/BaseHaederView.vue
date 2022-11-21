@@ -64,29 +64,29 @@
           <img src="@/assets/img/utils/icon-implant.png"/>
           <span class="same">임플란트 식립</span>
         </div>
-        <div
-            class="item"
-            v-for="(v, k) in fifth" :key="k"
-            @click="fifth[k] = !v"
-            :class="{isToggle:v}"
-        >
-          <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
-        </div>
+        <!--        <div
+                    class="item"
+                    v-for="(v, k) in fifth" :key="k"
+                    @click="fifth[k] = !v"
+                    :class="{isToggle:v}"
+                >
+                  <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
+                </div>-->
       </div>
       <div class="line"></div>
 
       <!-- 6 -->
-      <div class="itemBox">
-        <div
-            class="item"
-            v-for="(v, k) in sixth" :key="k"
-            @click="sixth[k] = !v"
-            :class="{isToggle:v}"
-        >
-          <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
-        </div>
-      </div>
-      <div class="line"></div>
+      <!--      <div class="itemBox">
+              <div
+                  class="item"
+                  v-for="(v, k) in sixth" :key="k"
+                  @click="sixth[k] = !v"
+                  :class="{isToggle:v}"
+              >
+                <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
+              </div>
+            </div>
+            <div class="line"></div>-->
 
       <!-- 7 -->
       <span class="same" style="padding: 0 0 0 3px;">초기화</span>
@@ -98,8 +98,10 @@
       </div>
     </div>
     <div class="baseUtilityView">
-      <img :src="mainImg" :class="{ sharpen:second['sharpen'] }" class="mainImg utilityEvent"/>
+
       <div class="mainPrintView" id="canvas">
+        <img :src="mainImg" :class="{ sharpen:second['sharpen'] }" class="mainImg utilityEvent"/>
+
         <VueDrawingCanvas
             ref="VueCanvasDrawing"
             v-model:image="image"
@@ -111,9 +113,10 @@
             :lock="lock"
             :color=lineColor
             :lineWidth=lineWidth
-            @mousedown="downFlag = !downFlag"
+            @mousedown="downFlag = !downFlag, startCoordinate($event)"
             @mousemove="changedMouseEvent($event)"
-            @mouseup="downFlag = !downFlag"
+            @mouseup="downFlag = !downFlag, endCoordinate($event)"
+            @wheel="changedScale"
             saveAs="png"
             line-cap="round"
             line-join="round"
@@ -129,8 +132,8 @@
       <div class="thumbnail" :class="{ thumbList:btnchg }">
         <div class="filterBtns" :class="{ filterCng:btnchg }">
           <div>
-          <span class="filterName">Date
-            <!--                        x-axis: <strong>{{ x }}</strong>, y-axis: <strong>{{ y }}</strong>-->
+          <span class="filterName">Date {{ brightness }}
+            <!-- x-axis: <strong>{{ x }}</strong>, y-axis: <strong>{{ y }}</strong> -->
           </span>
             <select class="filterSelect">
               <option>All</option>
@@ -144,14 +147,22 @@
           </div>
         </div>
         <div id="thumbnailList" class="thumbnailList" :class="{ ListCng:btnchg }">
-          <div class="thumbnailBtn" @click="btnchg = !btnchg"> {{ btnchg ? "▲" : "▼" }} Thumbnail {{ brightness }}</div>
+          <div class="thumbnailBtn" @click="btnchg = !btnchg"> {{ btnchg ? "▲" : "▼" }} Thumbnail {{ scale }}{{ x }}
+            {{ y }}
+          </div>
           <div id="thumbnails" class="thumbnails" :class="{ thumbnailsCng:btnchg }">
             <div id="imgBox" class="imgBox"
-                 @click="[mainImg = ima, isActive = !isActive]"
+                 @click="[showInfo(node), isActive = !isActive]"
                  :class="{ isToggle:isActive }"
-                 v-for="(ima, i) in imageArr"
+                 v-for="(node, i) in imageArr"
                  :key="i">
-              <img class="img" :src="ima" style="pointer-events: none;"/>
+              <img class="img" :src="node.images" style="pointer-events: none;" alt=""/>
+              <div v-if="isActive && first.info" class="info">
+                데이터 전처리 필요 <br>
+                Chart Id:: {{ dataInfo.chartId }} <br>
+                Unix Time:: {{ dataInfo.time }} <br>
+                {{ imageArr }}
+              </div>
             </div>
           </div>
         </div>
@@ -162,6 +173,7 @@
 
 <script>
 import '@/assets/css/utility.css'
+import {xmlToJson} from '@/assets/js/x2j.js'
 
 import axios from "axios"
 import drf from '@/api/drf'
@@ -184,12 +196,15 @@ export default {
     // utility ===================================================
     lock: true,
     // 1
-    imageArr: [
-      {chartId: '',},
-      {images: []},
-      {create: []},
-    ],
+    imageArr: [],
+    dataInfo: {},
 
+    scale: 1.0,
+    // 1-3
+    startX: 0,
+    startY: 0,
+    endX: 0,
+    endY: 0,
 
     // 2
     brightness: 100,
@@ -220,15 +235,16 @@ export default {
     // 4 o
     fourth: ['01', '02', '03', '04'],
     // 5 i
-    fifth: {'implant-01': false, 'implant-02': false, pontic: false},
+    // fifth: {'implant-01': false, 'implant-02': false, pontic: false},
     // 6 x
-    sixth: {'select-capture': false, 'full-screen-capture': false, 'window-capture': false},
+    // sixth: {'select-capture': false, 'full-screen-capture': false, 'window-capture': false},
 
     // base ===================================================
     // canvas height, width
     fullHeight: 0,
     fullWidth: 0,
     halfWidth: 0,
+
     // thumbnail static width
     thumbnailsWidth: 0,
 
@@ -236,7 +252,6 @@ export default {
     btnchg: false,
 
     mainImg: ' ',
-
 
     // canvas
     initialImage: [
@@ -288,12 +303,12 @@ export default {
       deep: true,
       handler() {
         this.mainImg = ' ';
-        this.imageArr.images = [];
-        this.imageArr.create = [];
+        this.imageArr = [];
 
-        this.imageArr.chartId = this.patientSeriesList.chartId;
+        const ch = this.patientSeriesList.chartId;
         this.patientSeriesList.entity.forEach(async e => {
-          this.imageArr.create.push(e.CREATED);
+          // create time
+          const cr = e.Created;
 
           // image
           const url = await axios({
@@ -304,9 +319,34 @@ export default {
             // }
             responseType: 'blob',
           })
-          const re = URL.createObjectURL(new Blob([url.data], {type: 'image/bmp'}));
-          this.imageArr.images.push(re);
+          const im = URL.createObjectURL(new Blob([url.data], {type: 'image/bmp'}));
+
+          let pw, ph;
+          // api 호출
+          // const url = "url 데이터";
+          // const reqURL = `${url}${ENCODING_API_KEY}`;
+          // const response = await fetch(reqURL);
+          // const xmlString = await ;
+          let XmlNode = new DOMParser().parseFromString(e.Tags, "text/xml");
+          const json = xmlToJson(XmlNode);
+          pw = json.tags.tags[0].tag[0]["@attributes"].value;
+          ph = json.tags.tags[0].tag[1]["@attributes"].value;
+
+          // PixelSpacing
+          const h = e.PixelSpacingH;
+          const v = e.PixelSpacingV;
+
+          this.imageArr.push({
+            chartId: ch,
+            images: im,
+            create: cr,
+            pw: pw,
+            ph: ph,
+            PixelSpacingH: h,
+            PixelSpacingW: v
+          })
         })
+
         // this.imageArr = [];
         // this.mainImg = ' ';
         // this.patientSeriesList.forEach(async instanceID => {
@@ -330,6 +370,47 @@ export default {
 
   methods: {
     // utility ===================================================
+    // 1-2
+    changedScale(e) {
+      if (this.first.zoom) {
+        console.log(this.first.zoom)
+        const rate = 0.002;
+        if (e.deltaY > 0 && this.scale >= 0.5 + rate) this.scale -= rate;
+        else if (e.deltaY < 0 && this.scale <= 2.0 - rate) this.scale += rate;
+      }
+    },
+
+    // 1-3
+    showInfo(e) {
+      this.mainImg = e.images;
+      this.pS = e.PixelSpacingH;
+      this.pW = e.pw;
+      this.dataInfo = {
+        'chartId': e.chartId,
+        'time': e.create,
+      }
+    },
+
+    // 1-4
+    startCoordinate(e) {
+      this.getCoordinate(e);
+      this.startX = this.x;
+      this.startY = this.y;
+    },
+
+    endCoordinate(e) {
+      if (this.second.ruler) {
+        this.getCoordinate(e);
+        this.endX = this.x;
+        this.endY = this.y;
+        const rate = this.pW / this.fullHeight;
+        // const pixelSpacing = 0.10000000149011612;
+        const pixelSpacing = this.pS;
+        const distance = Math.pow(Math.pow(this.startY - this.endY, 2) + Math.pow(this.startX - this.endX, 2), 0.5) * rate * pixelSpacing;
+        console.log(distance);
+      }
+    },
+
     // 2-1, 2-3
     changedMouseEvent(e) {
       if (this.downFlag && this.second.bright) {
@@ -337,10 +418,10 @@ export default {
         this.preX = this.x;
         this.preY = this.y;
         this.getCoordinate(e);
-        if (this.preX <= this.x && this.preY <= this.y) {
-          this.brightness++;
-        } else {
-          this.brightness--;
+        if (this.preX < this.x || this.preY < this.y) {
+          this.brightness += 2;
+        } else if (this.preX > this.x || this.preY > this.y) {
+          this.brightness -= 2;
         }
       }
     },
@@ -430,7 +511,7 @@ export default {
 
 /*  =============================================================== */
 .baseUtilityView {
-  background-color: black;
+  /*background-color: black;*/
   height: 718px;
   width: 100%;
   display: flex;
@@ -438,6 +519,25 @@ export default {
   flex-direction: column;
   justify-content: flex-start;
   position: relative;
+}
+
+.info {
+  /*width: 184px;*/
+  /*height: 66px;*/
+  top: 10px;
+  left: 10px;
+  /*margin: 5px 1424px 632px 0;*/
+  text-shadow: 1px 0 1px #000;
+  font-family: MalgunGothic;
+  position: absolute;
+  overflow: hidden;
+  font-size: 18px;
+  font-weight: bold;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: 1.22;
+  letter-spacing: -0.64px;
+  color: #fff;
 }
 
 .mainPrintView {
@@ -453,6 +553,8 @@ export default {
   border: 1px solid blue;
   height: calc(1px * v-bind(fullHeight));
   width: calc(1px * v-bind(fullHeight));
+  /*height: 512px;*/
+  /*width: 512px;*/
   position: absolute;
   left: calc(1px * ((v-bind(fullWidth) - v-bind(fullHeight)) / 2));
   /*z-index: 10;*/
@@ -569,15 +671,13 @@ export default {
 .utilityEvent {
   /* 1-1 */
   /* filter: translate(calc(1% * v-bind('inverse') / 6)); */
-
-  /* 1-2 */
-  /* filter: scale(calc(1% * v-bind('inverse') / 6)); */
-
+  overflow: hidden;
+  /* */
   /* 2-1, 2-2, */
   filter: brightness(calc(1% * v-bind(brightness))) invert(calc(1% * v-bind(inverse)));
 
-  /* 4-1, 4-2, 4-3, 4-4 */
-  transform: rotate(calc(1deg * v-bind(ang))) rotateX(calc(1deg * v-bind(rotX))) rotateY(calc(1deg * v-bind(rotY)));
+  /* 1-2, 4-1, 4-2, 4-3, 4-4 */
+  transform: scale(v-bind('scale')) rotate(calc(1deg * v-bind(ang))) rotateX(calc(1deg * v-bind(rotX))) rotateY(calc(1deg * v-bind(rotY)));
 }
 
 /* 2-3 */
@@ -588,6 +688,6 @@ export default {
 .canvasEvent {
   z-index: 10;
 
-  transform: rotate(calc(1deg * v-bind(ang))) rotateX(calc(1deg * v-bind(rotX))) rotateY(calc(1deg * v-bind(rotY)));
+  transform: scale(v-bind('scale')) rotate(calc(1deg * v-bind(ang))) rotateX(calc(1deg * v-bind(rotX))) rotateY(calc(1deg * v-bind(rotY)));
 }
 </style>
