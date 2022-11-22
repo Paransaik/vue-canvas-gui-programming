@@ -228,7 +228,8 @@ export default {
       tapeline: false,
       angle: false,
       arrow: false,
-      shape: false
+      shape: false,
+      rectangle: false,
     },
     // 3 t
     third: {draw: true, nerve: true},
@@ -461,10 +462,10 @@ export default {
     changedStrokeType(s) {
       if (s === 'ruler') {
         this.strokeType = 'line';
-        this.lock = this.second.shape;
-      } else if (s === 'shape') {
+        this.lock = this.second.rectangle;
+      } else if (s === 'rectangle') {
         this.strokeType = 'square';
-        this.lock = !this.second.shape;
+        this.lock = !this.second.rectangle;
       } else if (s === 'draw') {
         this.strokeType = 'dash';
         this.lock = this.third.draw;
