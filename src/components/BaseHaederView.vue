@@ -218,7 +218,11 @@ export default {
     rotY: 0,
 
     // 1 f
-    first: {pan: false, zoom: false, info: false},
+    first: {
+      pan: false,
+      zoom: false,
+      info: false
+    },
     // 2 s
     second: {
       bright: false,
@@ -374,7 +378,6 @@ export default {
     // 1-2
     changedScale(e) {
       if (this.first.zoom) {
-        console.log(this.first.zoom)
         const rate = 0.002;
         if (e.deltaY > 0 && this.scale >= 0.5 + rate) this.scale -= rate;
         else if (e.deltaY < 0 && this.scale <= 2.0 - rate) this.scale += rate;
@@ -463,6 +466,9 @@ export default {
       if (s === 'ruler') {
         this.strokeType = 'line';
         this.lock = this.second.rectangle;
+      } else if (s === 'shape') {
+        this.strokeType = 'circle';
+        this.lock = !this.second.shape;
       } else if (s === 'rectangle') {
         this.strokeType = 'square';
         this.lock = !this.second.rectangle;
@@ -470,7 +476,6 @@ export default {
         this.strokeType = 'dash';
         this.lock = this.third.draw;
       }
-
     },
 
     clearView() {
@@ -512,7 +517,7 @@ export default {
 
 /*  =============================================================== */
 .baseUtilityView {
-  /*background-color: black;*/
+  background-color: black;
   height: 718px;
   width: 100%;
   display: flex;
