@@ -358,7 +358,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
           context.lineTo(stroke.x, stroke.y);
 
           if(strokes.type !== 'square' && strokes.type !== 'dash') {
-            // Arrow Mark
+            // 11.22. Arrow Mark
             var aWidth = 5;
             var aLength = 12;
             var dx = strokes.from.x - stroke.x;
@@ -368,7 +368,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
             context.translate(stroke.x, stroke.y);
             context.rotate(angle);
             context.fillStyle = strokes.color;
-            context.moveTo(length - aLength, -aWidth);
+            context.moveTo(length - aLength, - aWidth);
             context.lineTo(length, 0);
             context.lineTo(length - aLength, aWidth);
             context.fill();

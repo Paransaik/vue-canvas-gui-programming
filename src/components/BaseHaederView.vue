@@ -91,6 +91,9 @@
       <!-- 7 -->
       <span class="same" style="padding: 0 0 0 3px;">초기화</span>
       <div class="itemBox">
+        <button class="item bar same" @click.prevent="$refs.VueCanvasDrawing.undo()">Undo</button>
+        <button class="item bar same" @click.prevent="$refs.VueCanvasDrawing.redo()">Redo</button>
+
         <!-- 회전 초기화-->
         <button class="item bar same" @click="clearView">뷰</button>
         <!-- 회전, 그림 초기화-->
@@ -152,16 +155,15 @@
           </div>
           <div id="thumbnails" class="thumbnails" :class="{ thumbnailsCng:btnchg }">
             <div id="imgBox" class="imgBox"
-                 @click="[showInfo(node), isActive = !isActive]"
-                 :class="{ isToggle:isActive }"
+                 @click="showInfo(node, i, $event)"
                  v-for="(node, i) in imageArr"
                  :key="i">
-              <img class="img" :src="node.images" style="pointer-events: none;" alt=""/>
-              <div v-if="isActive && first.info" class="info">
+              <img class="imgs" :src="node.images" style="pointer-events: none;" alt=""/>
+              <div v-if="first.info" class="info">
                 데이터 전처리 필요 <br>
                 Chart Id:: {{ dataInfo.chartId }} <br>
                 Unix Time:: {{ dataInfo.time }} <br>
-                {{ imageArr }}
+                <!-- {{ imageArr }} -->
               </div>
             </div>
           </div>
@@ -253,10 +255,10 @@ export default {
     // thumbnail static width
     thumbnailsWidth: 0,
 
-    isActive: false,
+    preImage: '',
     btnchg: false,
 
-    mainImg: ' ',
+    mainImg: 'https://png.pngtree.com/background/20210714/original/pngtree-pure-black-dark-background-wallpaper-picture-image_1218983.jpg',
 
     // canvas
     initialImage: [
@@ -307,7 +309,7 @@ export default {
     patientSeriesList: {
       deep: true,
       handler() {
-        this.mainImg = ' ';
+        this.mainImg = 'https://png.pngtree.com/background/20210714/original/pngtree-pure-black-dark-background-wallpaper-picture-image_1218983.jpg';
         this.imageArr = [];
 
         const ch = this.patientSeriesList.chartId;
@@ -385,13 +387,20 @@ export default {
     },
 
     // 1-3
-    showInfo(e) {
-      this.mainImg = e.images;
-      this.pS = e.PixelSpacingH;
-      this.pW = e.pw;
+    showInfo(node, idx, e) {
+      if (this.preImage !== '') {
+        this.preImage.setAttribute('style', '');
+      }
+
+      this.mainImg = node.images;
+      e.target.setAttribute('style', 'border: 2px solid blue');
+      this.preImage = e.target;
+
+      this.pS = node.PixelSpacingH;
+      this.pW = node.pw;
       this.dataInfo = {
-        'chartId': e.chartId,
-        'time': e.create,
+        'chartId': node.chartId,
+        'time': node.create,
       }
     },
 
@@ -431,6 +440,7 @@ export default {
     },
 
     // event
+    // 2-2, 4-1, 4-2, 4-3, 4-3
     changedEvent(e) {
       if (e === 'inverse') {
         // Change Inverse
@@ -462,6 +472,7 @@ export default {
       }
     },
 
+    // 2-4, 2-8, 2-9, 3-1
     changedStrokeType(s) {
       if (s === 'ruler') {
         this.strokeType = 'line';
@@ -478,6 +489,7 @@ export default {
       }
     },
 
+    // 7-1, 7-2
     clearView() {
       this.brightness = 100;
       this.inverse = 0;
@@ -517,7 +529,7 @@ export default {
 
 /*  =============================================================== */
 .baseUtilityView {
-  background-color: black;
+  background-color: gray;
   height: 718px;
   width: 100%;
   display: flex;
@@ -556,15 +568,14 @@ export default {
 }
 
 .mainImg {
-  border: 1px solid blue;
+  /*border: 1px solid blue;*/
   height: calc(1px * v-bind(fullHeight));
   width: calc(1px * v-bind(fullHeight));
-  /*height: 512px;*/
-  /*width: 512px;*/
   position: absolute;
   left: calc(1px * ((v-bind(fullWidth) - v-bind(fullHeight)) / 2));
   /*z-index: 10;*/
 }
+
 
 .thumbnail {
   display: flex;
@@ -630,7 +641,6 @@ export default {
   width: calc(1px * v-bind(thumbnailsWidth));
   flex-wrap: nowrap;
   overflow-x: auto;
-
   align-items: center;
   height: 124px;
   background-color: #f4f6f9;
@@ -645,7 +655,7 @@ export default {
   flex: 0 0 auto;
 }
 
-.img {
+.imgs {
   margin: 0 auto;
   width: 90px;
   height: 89px;
