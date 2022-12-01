@@ -93,6 +93,7 @@
       <div class="itemBox">
         <button class="item bar same" @click.prevent="$refs.VueCanvasDrawing.undo()">Undo</button>
         <button class="item bar same" @click.prevent="$refs.VueCanvasDrawing.redo()">Redo</button>
+        <button class="item bar same" @click.prevent="$refs.VueCanvasDrawing.wrapText()">text</button>
 
         <!-- 회전 초기화-->
         <button class="item bar same" @click="clearView">뷰</button>
@@ -102,7 +103,12 @@
     </div>
     <div class="baseUtilityView">
 
-      <div class="mainPrintView" id="canvas">
+      <div class="mainPrintView" id="canvas"
+           @mousedown="startMoving($event)"
+           @mousemove="moveImage($event)"
+           @mouseup="endMoving"
+           @mouseleave="endMoving"
+      >
         <img :src="mainImg" :class="{ sharpen:second['sharpen'] }" class="mainImg utilityEvent"/>
 
         <VueDrawingCanvas
@@ -126,9 +132,6 @@
             :initial-image="initialImage"
             classes="canvasEvent"
             :styles="{
-              border: 'solid 1px #FF0000',
-              position: 'absolute',
-              top: '-' + halfWidth + 'px',
             }"
         />
       </div>
@@ -155,7 +158,7 @@
           </div>
           <div id="thumbnails" class="thumbnails" :class="{ thumbnailsCng:btnchg }">
             <div id="imgBox" class="imgBox"
-                 @click="showInfo(node, i, $event)"
+                 @click="showInfo(node, $event)"
                  v-for="(node, i) in imageArr"
                  :key="i">
               <img class="imgs" :src="node.images" style="pointer-events: none;" alt=""/>
@@ -194,6 +197,8 @@ export default {
 
   data: () => ({
     cnt: 0,
+    clientHeight: 0,
+    clientWeidth: 0,
 
     // utility ===================================================
     lock: true,
@@ -201,6 +206,13 @@ export default {
     imageArr: [],
     dataInfo: {},
 
+    // 1-1
+    mouseFlag: false,
+    startTop: 0,
+    startLeft: 0,
+    movingTop: 0,
+    movingLeft: 0,
+    // 1-2
     scale: 1.0,
     // 1-3
     startX: 0,
@@ -377,6 +389,28 @@ export default {
 
   methods: {
     // utility ===================================================
+    // 1-1
+    startMoving(e) {
+      if (this.first.pan && !this.mouseFlag) {
+        this.startTop = e.screenY;
+        this.startLeft = e.screenX;
+        this.mouseFlag = true;
+      }
+    },
+    moveImage(e) {
+      if (this.first.pan && this.mouseFlag) {
+        this.movingTop += e.screenY - this.startTop;
+        this.startTop = e.screenY;
+        this.movingLeft += e.screenX - this.startLeft;
+        this.startLeft = e.screenX;
+      }
+    },
+    endMoving(){
+      if (this.first.pan && this.mouseFlag) {
+        this.mouseFlag = false;
+      }
+    },
+
     // 1-2
     changedScale(e) {
       if (this.first.zoom) {
@@ -387,7 +421,7 @@ export default {
     },
 
     // 1-3
-    showInfo(node, idx, e) {
+    showInfo(node, e) {
       if (this.preImage !== '') {
         this.preImage.setAttribute('style', '');
       }
@@ -404,13 +438,12 @@ export default {
       }
     },
 
-    // 1-4
+    // 2-4
     startCoordinate(e) {
       this.getCoordinate(e);
       this.startX = this.x;
       this.startY = this.y;
     },
-
     endCoordinate(e) {
       if (this.second.ruler) {
         this.getCoordinate(e);
@@ -572,7 +605,8 @@ export default {
   height: calc(1px * v-bind(fullHeight));
   width: calc(1px * v-bind(fullHeight));
   position: absolute;
-  left: calc(1px * ((v-bind(fullWidth) - v-bind(fullHeight)) / 2));
+  top: calc(1px * v-bind(movingTop));
+  left: calc(1px * (((v-bind(fullWidth) - v-bind(fullHeight)) / 2) + v-bind(movingLeft)));
   /*z-index: 10;*/
 }
 
@@ -703,6 +737,12 @@ export default {
 
 .canvasEvent {
   z-index: 10;
+  border: solid 1px #FF0000;
+  position: absolute;
+  /*top: calc(1px * v-bind(movingTop));*/
+
+  top: calc(-1px * (v-bind(halfWidth) - v-bind(movingTop)));
+  left: calc(1px * v-bind(movingLeft));
 
   transform: scale(v-bind('scale')) rotate(calc(1deg * v-bind(ang))) rotateX(calc(1deg * v-bind(rotX))) rotateY(calc(1deg * v-bind(rotY)));
 }
