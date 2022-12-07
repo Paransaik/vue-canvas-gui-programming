@@ -6,7 +6,7 @@
         <div
             class="item"
             v-for="(v, k) in first" :key="k"
-            @click="first[k] = !v"
+            @click="first[k] = !v, checkedToggling(k)"
             :class="{isToggle:v}"
         >
           <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
@@ -19,7 +19,7 @@
         <div
             class="item"
             v-for="(v, k) in second" :key="k"
-            @click="second[k] = !v, changedStrokeType(k), changedEvent(k)"
+            @click="second[k] = !v, checkedToggling(k), changedStrokeType(k), changedEvent(k)"
             :class="{isToggle:v}">
           <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
           <!-- ({'name' : k, 'state' : v }, inverse)-->
@@ -32,7 +32,7 @@
         <div
             class="item bar"
             v-for="(v, k) in third" :key="k"
-            @click="third[k] = !v, changedStrokeType(k)"
+            @click="third[k] = !v, checkedToggling(k), changedStrokeType(k)"
             :class="{isToggle:!v}"
         >
           <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
@@ -93,7 +93,7 @@
       <div class="itemBox">
         <button class="item bar same" @click.prevent="$refs.VueCanvasDrawing.undo()">Undo</button>
         <button class="item bar same" @click.prevent="$refs.VueCanvasDrawing.redo()">Redo</button>
-        <button class="item bar same" @click.prevent="$refs.VueCanvasDrawing.wrapText()">text</button>
+        <button class="item bar same" @click.prevent="save">save</button>
 
         <!-- 회전 초기화-->
         <button class="item bar same" @click="clearView">뷰</button>
@@ -117,8 +117,8 @@
             :stroke-type="strokeType"
             :fill-shape="fillShape"
             :backgroundImage="backgroundImage"
-            :height="fullWidth"
-            :width="fullWidth"
+            :height="canvasFullHeight"
+            :width="canvasFullWidth"
             :lock="lock"
             :color=lineColor
             :lineWidth=lineWidth
@@ -153,8 +153,8 @@
           </div>
         </div>
         <div id="thumbnailList" class="thumbnailList" :class="{ ListCng:btnchg }">
-          <div class="thumbnailBtn" @click="btnchg = !btnchg"> {{ btnchg ? "▲" : "▼" }} Thumbnail {{ scale }}{{ x }}
-            {{ y }}
+          <div class="thumbnailBtn" @click="btnchg = !btnchg"> {{ btnchg ? "▲" : "▼" }} Thumbnail {{ x }}
+            {{ y }} {{ scale }}
           </div>
           <div id="thumbnails" class="thumbnails" :class="{ thumbnailsCng:btnchg }">
             <div id="imgBox" class="imgBox"
@@ -196,9 +196,16 @@ export default {
   props: {},
 
   data: () => ({
-    cnt: 0,
-    clientHeight: 0,
-    clientWeidth: 0,
+    disable: false,
+
+    // Canvas
+    canvasFullWidth: 0,
+    canvasFullHeight: 0,
+    // 0, 0 coordinate set
+    coorWidth: 0,
+    coorHeight: 0,
+    // halfHeight
+    halfHeight: 0,
 
     // utility ===================================================
     lock: true,
@@ -299,10 +306,14 @@ export default {
   }),
 
   mounted() {
-    this.fullHeight = document.getElementById('canvas').clientHeight - 2;
-    this.fullWidth = document.getElementById('canvas').clientWidth - 2;
-    this.halfWidth = (this.fullWidth - this.fullHeight) / 2;
+    this.fullHeight = document.getElementById('canvas').clientHeight;
+    this.fullWidth = document.getElementById('canvas').clientWidth;
+    this.halfHeight = this.fullHeight / 2;
+    this.coorWidth = this.fullWidth / 2;
+    this.coorHeight = this.fullHeight;
 
+    this.canvasFullWidth = this.fullWidth;
+    this.canvasFullHeight = this.fullHeight * 2;
     this.thumbnailsWidth = document.getElementById('thumbnailList').clientWidth;
     if ("vue-drawing-canvas" in window.localStorage) {
       this.initialImage = JSON.parse(
@@ -340,29 +351,37 @@ export default {
           })
           const im = URL.createObjectURL(new Blob([url.data], {type: 'image/bmp'}));
 
-          let pw, ph;
-          // api 호출
-          // const url = "url 데이터";
-          // const reqURL = `${url}${ENCODING_API_KEY}`;
-          // const response = await fetch(reqURL);
-          // const xmlString = await ;
+          const dr = await axios({
+            url: drf.patient.drawImage(e.UniqueID),
+            method: 'get',
+            headers: {
+              "Content-Type": "multipart/form-data"
+            }
+          })
+
+          let pw, ph, yRate;
+          // xml to json
           let XmlNode = new DOMParser().parseFromString(e.Tags, "text/xml");
           const json = xmlToJson(XmlNode);
           pw = json.tags.tags[0].tag[0]["@attributes"].value;
           ph = json.tags.tags[0].tag[1]["@attributes"].value;
-
-          // PixelSpacing
+          yRate = this.fullHeight / (ph * e.PixelSpacingH);
           const h = e.PixelSpacingH;
           const v = e.PixelSpacingV;
 
           this.imageArr.push({
             chartId: ch,
             images: im,
+            drawMark: dr,
             create: cr,
             pw: pw,
             ph: ph,
             PixelSpacingH: h,
-            PixelSpacingW: v
+            PixelSpacingW: v,
+            // one2 to web rate: 512 * pixcelspacing : fullHeight
+            one2web: yRate,
+            overl: dr.data.overlaies,
+
           })
         })
 
@@ -388,6 +407,127 @@ export default {
   },
 
   methods: {
+    // Button Toggle checked
+    // 저도 이러고 싶지 않았습니다. 저는 백엔드 개발자인데...
+    // 알고리즘은 짰는데 js 문법을 모르겠습니다. 자바로 5분도 안걸리는데...
+    // 알고리즘은 리스트에 해당 pan, bright ... nerve를 넣고 for문을 돌려 함수 파라미터로 넘겨 받는 name과
+    // 일치하는 것을 제외하고 값을 정해주면 됩니다. 제가 생각했을 때 6줄 내로 끝나는 알고리즘입니다.
+    // Refactoring 에정
+    // - 2122.12.07. 정태영 사원
+    checkedToggling(name) {
+      console.log(name);
+      switch (name) {
+        case 'pen':
+          if (this.first.pan === true) {
+            this.second.bright = false;
+            this.second.ruler = false;
+            this.second.tapeline = false;
+            this.second.angle = false;
+            this.second.shape = false;
+            this.second.rectangle = false;
+            this.third.draw = true;
+            this.third.nerve = true;
+          }
+          break;
+        case 'bright':
+          if (this.second.bright === true) {
+            this.first.pan = false;
+            this.second.ruler = false;
+            this.second.tapeline = false;
+            this.second.angle = false;
+            this.second.shape = false;
+            this.second.rectangle = false;
+            this.third.draw = true;
+            this.third.nerve = true;
+          }
+          break;
+        case 'ruler':
+          if (this.second.ruler === true) {
+            this.first.pan = false;
+            this.second.bright = false;
+            this.second.tapeline = false;
+            this.second.angle = false;
+            this.second.shape = false;
+            this.second.rectangle = false;
+            this.third.draw = true;
+            this.third.nerve = true;
+          }
+          break;
+        case 'tapeline':
+          if (this.second.tapeline === true) {
+            this.first.pan = false;
+            this.second.bright = false;
+            this.second.ruler = false;
+            this.second.angle = false;
+            this.second.shape = false;
+            this.second.rectangle = false;
+            this.third.draw = true;
+            this.third.nerve = true;
+          }
+          break;
+        case 'angle':
+          if (this.second.angle === true) {
+            this.first.pan = false;
+            this.second.bright = false;
+            this.second.ruler = false;
+            this.second.tapeline = false;
+            this.second.shape = false;
+            this.second.rectangle = false;
+            this.third.draw = true;
+            this.third.nerve = true;
+          }
+          break;
+        case 'shape':
+          if (this.second.shape === true) {
+            this.first.pan = false;
+            this.second.bright = false;
+            this.second.ruler = false;
+            this.second.tapeline = false;
+            this.second.angle = false;
+            this.second.rectangle = false;
+            this.third.draw = true;
+            this.third.nerve = true;
+          }
+          break;
+        case 'rectangle':
+          if (this.second.rectangle === true) {
+            this.first.pan = false;
+            this.second.bright = false;
+            this.second.ruler = false;
+            this.second.tapeline = false;
+            this.second.angle = false;
+            this.second.shape = false;
+            this.third.draw = true;
+            this.third.nerve = true;
+          }
+          break;
+        case 'draw':
+          if (this.third.draw === false) {
+            this.first.pan = false;
+            this.second.bright = false;
+            this.second.ruler = false;
+            this.second.tapeline = false;
+            this.second.angle = false;
+            this.second.shape = false;
+            this.second.rectangle = false;
+            this.third.nerve = true;
+          }
+          break;
+        case 'nerve':
+          if (this.third.nerve === false) {
+            this.first.pan = false;
+            this.second.bright = false;
+            this.second.ruler = false;
+            this.second.tapeline = false;
+            this.second.angle = false;
+            this.second.shape = false;
+            this.second.rectangle = false;
+            this.third.draw = true;
+          }
+          break;
+      }
+    },
+
     // utility ===================================================
     // 1-1
     startMoving(e) {
@@ -405,7 +545,7 @@ export default {
         this.startLeft = e.screenX;
       }
     },
-    endMoving(){
+    endMoving() {
       if (this.first.pan && this.mouseFlag) {
         this.mouseFlag = false;
       }
@@ -421,7 +561,8 @@ export default {
     },
 
     // 1-3
-    showInfo(node, e) {
+    async showInfo(node, e) {
+      this.disable = true;
       if (this.preImage !== '') {
         this.preImage.setAttribute('style', '');
       }
@@ -436,13 +577,24 @@ export default {
         'chartId': node.chartId,
         'time': node.create,
       }
+
+      for (const d of node.overl) {
+        // console.log(d.scene_pos);
+        // console.log(d.style);
+        // console.log(d.transformation);
+        // console.log(d.type);
+        await this.drawing(d, node.one2web);
+      }
+
     },
 
     // 2-4
     startCoordinate(e) {
-      this.getCoordinate(e);
-      this.startX = this.x;
-      this.startY = this.y;
+      if (this.second.ruler) {
+        this.getCoordinate(e);
+        this.startX = this.x;
+        this.startY = this.y;
+      }
     },
     endCoordinate(e) {
       if (this.second.ruler) {
@@ -460,6 +612,7 @@ export default {
     // 2-1, 2-3
     changedMouseEvent(e) {
       if (this.downFlag && this.second.bright) {
+        this.first.pan = false;
         this.cnt++;
         this.preX = this.x;
         this.preY = this.y;
@@ -509,7 +662,7 @@ export default {
     changedStrokeType(s) {
       if (s === 'ruler') {
         this.strokeType = 'line';
-        this.lock = this.second.rectangle;
+        this.lock = !this.second.ruler;
       } else if (s === 'shape') {
         this.strokeType = 'circle';
         this.lock = !this.second.shape;
@@ -524,12 +677,61 @@ export default {
 
     // 7-1, 7-2
     clearView() {
+      this.first.pen = false;
+      this.first.zoom = false;
+      this.first.info = false;
+
+      this.second.bright = false;
+      this.second.inverse = false;
+      this.second.sharpen = false;
+
+      this.scale = 1.0;
+
       this.brightness = 100;
       this.inverse = 0;
 
       this.ang = 0;
       this.rotX = 0;
       this.rotY = 0;
+
+
+    },
+
+    drawing(d, rate) {
+      // RGBA -> RGB
+      this.lineColor = '#' + d.style.pen.color.substring(3, 9);
+      this.lineWidth = d.style.pen.width;
+
+      let canvas = document.querySelector('#VueDrawingCanvas');
+      const context = this.context ? this.context : canvas.getContext('2d');
+      context.strokeStyle = this.lineColor;
+      context.fillStyle = this.lineColor;
+      context.lineWidth = this.lineWidth;
+      context.lineJoin = "round";
+      context.lineCap = "round";
+      context.strokeType = "dash";
+
+      context.beginPath();
+      context.setLineDash([]);
+      if (d.scene_pos['control-points'][0]) {
+        context.moveTo(d.scene_pos['control-points'][0].x * rate + this.coorWidth,
+            d.scene_pos['control-points'][0].y * rate + this.coorHeight);
+      }
+      d.scene_pos['control-points'].forEach(p => {
+        // console.log(this.coorWidth + (p.x * rate));
+        // console.log(this.coorHeight + (p.y * rate));
+        context.lineTo(this.coorWidth + (p.x * rate), this.coorHeight + (p.y * rate));
+      })
+      context.stroke();
+    },
+
+
+    save() {
+      console.log("Call by method save");
+      const link = document.createElement('a');
+      link.download = 'param'; // filename
+      link.href = this.image;
+      link.click();
     },
 
     // base ===================================================
@@ -562,7 +764,8 @@ export default {
 
 /*  =============================================================== */
 .baseUtilityView {
-  background-color: gray;
+  /* debug용 */
+  /*background-color: black;*/
   height: 718px;
   width: 100%;
   display: flex;
@@ -573,13 +776,9 @@ export default {
 }
 
 .info {
-  /*width: 184px;*/
-  /*height: 66px;*/
   top: 10px;
   left: 10px;
-  /*margin: 5px 1424px 632px 0;*/
   text-shadow: 1px 0 1px #000;
-  font-family: MalgunGothic;
   position: absolute;
   overflow: hidden;
   font-size: 18px;
@@ -601,13 +800,11 @@ export default {
 }
 
 .mainImg {
-  /*border: 1px solid blue;*/
   height: calc(1px * v-bind(fullHeight));
   width: calc(1px * v-bind(fullHeight));
   position: absolute;
   top: calc(1px * v-bind(movingTop));
   left: calc(1px * (((v-bind(fullWidth) - v-bind(fullHeight)) / 2) + v-bind(movingLeft)));
-  /*z-index: 10;*/
 }
 
 
@@ -719,10 +916,7 @@ export default {
 }
 
 .utilityEvent {
-  /* 1-1 */
-  /* filter: translate(calc(1% * v-bind('inverse') / 6)); */
   overflow: hidden;
-  /* */
   /* 2-1, 2-2, */
   filter: brightness(calc(1% * v-bind(brightness))) invert(calc(1% * v-bind(inverse)));
 
@@ -741,7 +935,7 @@ export default {
   position: absolute;
   /*top: calc(1px * v-bind(movingTop));*/
 
-  top: calc(-1px * (v-bind(halfWidth) - v-bind(movingTop)));
+  top: calc(-1px * (v-bind(halfHeight) - v-bind(movingTop)));
   left: calc(1px * v-bind(movingLeft));
 
   transform: scale(v-bind('scale')) rotate(calc(1deg * v-bind(ang))) rotateX(calc(1deg * v-bind(rotX))) rotateY(calc(1deg * v-bind(rotY)));

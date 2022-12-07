@@ -12,6 +12,7 @@ export default {
 
     // No index.js
     patientImgFileDownload: (instanceID) => `download_instance/instanceJPG/uid/${instanceID}.1`,
+    drawImage: (instanceID) => `download_instance/instance/config/uid/param?uid=${instanceID}.1`,
 
     // patientName: (uid) => `patient/json/get/uid/${uid}`,
     // patientPictureList: (uid) => `study/json/search/uid/patient/${uid}`,
