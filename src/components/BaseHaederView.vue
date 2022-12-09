@@ -6,8 +6,8 @@
         <div
             class="item"
             v-for="(v, k) in first" :key="k"
-            @click="first[k] = !v, checkedToggling(k)"
-            :class="{isToggle:v}"
+            @click="checkedToggling(first, k, v), changedStrokeType(s)"
+            :class="{isToggle:v && disable}"
         >
           <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
         </div>
@@ -19,8 +19,8 @@
         <div
             class="item"
             v-for="(v, k) in second" :key="k"
-            @click="second[k] = !v, checkedToggling(k), changedStrokeType(k), changedEvent(k)"
-            :class="{isToggle:v}">
+            @click="checkedToggling(second, k, v), changedStrokeType(k), changedEvent(k)"
+            :class="{isToggle:v && disable}">
           <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
           <!-- ({'name' : k, 'state' : v }, inverse)-->
         </div>
@@ -32,8 +32,8 @@
         <div
             class="item bar"
             v-for="(v, k) in third" :key="k"
-            @click="third[k] = !v, checkedToggling(k), changedStrokeType(k)"
-            :class="{isToggle:!v}"
+            @click="checkedToggling(third, k, v), changedStrokeType(k)"
+            :class="{isToggle:!v && disable}"
         >
           <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
         </div>
@@ -414,117 +414,132 @@ export default {
     // 일치하는 것을 제외하고 값을 정해주면 됩니다. 제가 생각했을 때 6줄 내로 끝나는 알고리즘입니다.
     // Refactoring 에정
     // - 2122.12.07. 정태영 사원
-    checkedToggling(name) {
-      console.log(name);
-      switch (name) {
-        case 'pen':
-          if (this.first.pan === true) {
-            this.second.bright = false;
-            this.second.ruler = false;
-            this.second.tapeline = false;
-            this.second.angle = false;
-            this.second.shape = false;
-            this.second.rectangle = false;
-            this.third.draw = true;
-            this.third.nerve = true;
-          }
-          break;
-        case 'bright':
-          if (this.second.bright === true) {
-            this.first.pan = false;
-            this.second.ruler = false;
-            this.second.tapeline = false;
-            this.second.angle = false;
-            this.second.shape = false;
-            this.second.rectangle = false;
-            this.third.draw = true;
-            this.third.nerve = true;
-          }
-          break;
-        case 'ruler':
-          if (this.second.ruler === true) {
-            this.first.pan = false;
-            this.second.bright = false;
-            this.second.tapeline = false;
-            this.second.angle = false;
-            this.second.shape = false;
-            this.second.rectangle = false;
-            this.third.draw = true;
-            this.third.nerve = true;
-          }
-          break;
-        case 'tapeline':
-          if (this.second.tapeline === true) {
-            this.first.pan = false;
-            this.second.bright = false;
-            this.second.ruler = false;
-            this.second.angle = false;
-            this.second.shape = false;
-            this.second.rectangle = false;
-            this.third.draw = true;
-            this.third.nerve = true;
-          }
-          break;
-        case 'angle':
-          if (this.second.angle === true) {
-            this.first.pan = false;
-            this.second.bright = false;
-            this.second.ruler = false;
-            this.second.tapeline = false;
-            this.second.shape = false;
-            this.second.rectangle = false;
-            this.third.draw = true;
-            this.third.nerve = true;
-          }
-          break;
-        case 'shape':
-          if (this.second.shape === true) {
-            this.first.pan = false;
-            this.second.bright = false;
-            this.second.ruler = false;
-            this.second.tapeline = false;
-            this.second.angle = false;
-            this.second.rectangle = false;
-            this.third.draw = true;
-            this.third.nerve = true;
-          }
-          break;
-        case 'rectangle':
-          if (this.second.rectangle === true) {
-            this.first.pan = false;
-            this.second.bright = false;
-            this.second.ruler = false;
-            this.second.tapeline = false;
-            this.second.angle = false;
-            this.second.shape = false;
-            this.third.draw = true;
-            this.third.nerve = true;
-          }
-          break;
-        case 'draw':
-          if (this.third.draw === false) {
-            this.first.pan = false;
-            this.second.bright = false;
-            this.second.ruler = false;
-            this.second.tapeline = false;
-            this.second.angle = false;
-            this.second.shape = false;
-            this.second.rectangle = false;
-            this.third.nerve = true;
-          }
-          break;
-        case 'nerve':
-          if (this.third.nerve === false) {
-            this.first.pan = false;
-            this.second.bright = false;
-            this.second.ruler = false;
-            this.second.tapeline = false;
-            this.second.angle = false;
-            this.second.shape = false;
-            this.second.rectangle = false;
-            this.third.draw = true;
-          }
-          break;
+    checkedToggling(idx, name, bool) {
+      if (this.disable) {
+        idx[name] = !bool;
+        console.log(name, idx[name])
+        // if (idx[name] === bool) {
+        //   this.first.pan = false;
+        //   this.second.bright = false;
+        //   this.second.ruler = false;
+        //   this.second.tapeline = false;
+        //   this.second.angle = false;
+        //   this.second.shape = false;
+        //   this.second.rectangle = false;
+        //   this.third.draw = true;
+        //   this.third.nerve = true;
+        // }
+        switch (name) {
+          case 'pan':
+            if (this.first.pan === true) {
+              this.second.bright = false;
+              this.second.ruler = false;
+              this.second.tapeline = false;
+              this.second.angle = false;
+              this.second.shape = false;
+              this.second.rectangle = false;
+              this.third.draw = true;
+              this.third.nerve = true;
+            }
+            break;
+          case 'bright':
+            if (this.second.bright === true) {
+              this.first.pan = false;
+              this.second.ruler = false;
+              this.second.tapeline = false;
+              this.second.angle = false;
+              this.second.shape = false;
+              this.second.rectangle = false;
+              this.third.draw = true;
+              this.third.nerve = true;
+            }
+            break;
+          case 'ruler':
+            if (this.second.ruler === true) {
+              this.first.pan = false;
+              this.second.bright = false;
+              this.second.tapeline = false;
+              this.second.angle = false;
+              this.second.shape = false;
+              this.second.rectangle = false;
+              this.third.draw = true;
+              this.third.nerve = true;
+            }
+            break;
+          case 'tapeline':
+            if (this.second.tapeline === true) {
+              this.first.pan = false;
+              this.second.bright = false;
+              this.second.ruler = false;
+              this.second.angle = false;
+              this.second.shape = false;
+              this.second.rectangle = false;
+              this.third.draw = true;
+              this.third.nerve = true;
+            }
+            break;
+          case 'angle':
+            if (this.second.angle === true) {
+              this.first.pan = false;
+              this.second.bright = false;
+              this.second.ruler = false;
+              this.second.tapeline = false;
+              this.second.shape = false;
+              this.second.rectangle = false;
+              this.third.draw = true;
+              this.third.nerve = true;
+            }
+            break;
+          case 'shape':
+            if (this.second.shape === true) {
+              this.first.pan = false;
+              this.second.bright = false;
+              this.second.ruler = false;
+              this.second.tapeline = false;
+              this.second.angle = false;
+              this.second.rectangle = false;
+              this.third.draw = true;
+              this.third.nerve = true;
+            }
+            break;
+          case 'rectangle':
+            if (this.second.rectangle === true) {
+              this.first.pan = false;
+              this.second.bright = false;
+              this.second.ruler = false;
+              this.second.tapeline = false;
+              this.second.angle = false;
+              this.second.shape = false;
+              this.third.draw = true;
+              this.third.nerve = true;
+            }
+            break;
+          case 'draw':
+            if (this.third.draw === false) {
+              this.first.pan = false;
+              this.second.bright = false;
+              this.second.ruler = false;
+              this.second.tapeline = false;
+              this.second.angle = false;
+              this.second.shape = false;
+              this.second.rectangle = false;
+              this.third.nerve = true;
+            }
+            break;
+          case 'nerve':
+            if (this.third.nerve === false) {
+              this.first.pan = false;
+              this.second.bright = false;
+              this.second.ruler = false;
+              this.second.tapeline = false;
+              this.second.angle = false;
+              this.second.shape = false;
+              this.second.rectangle = false;
+              this.third.draw = true;
+            }
+            break;
+        }
+        console.log('end case')
       }
     },
 
@@ -563,6 +578,7 @@ export default {
     // 1-3
     async showInfo(node, e) {
       this.disable = true;
+
       if (this.preImage !== '') {
         this.preImage.setAttribute('style', '');
       }
@@ -612,7 +628,7 @@ export default {
     // 2-1, 2-3
     changedMouseEvent(e) {
       if (this.downFlag && this.second.bright) {
-        this.first.pan = false;
+        this.lock = this.second.bright;
         this.cnt++;
         this.preX = this.x;
         this.preY = this.y;
@@ -628,31 +644,33 @@ export default {
     // event
     // 2-2, 4-1, 4-2, 4-3, 4-3
     changedEvent(e) {
-      if (e === 'inverse') {
-        // Change Inverse
-        // 2-2
-        if (this.second[e] === true) this.inverse = 100;
-        else this.inverse = 0;
-      } else {
-        // Change Angle
-        // 4-1, 4-2, 4-3, 4-4
-        // @click="utilityEvent(i), send({'name' : k, 'state' : i }, [ang, rotX, rotY])"
-        if (e === 0) {
-          this.ang = (this.ang + 90) % 360
-        } else if (e === 1) {
-          if (this.ang === 0) this.ang = 360;
-          this.ang = (this.ang - 90) % 360
-        } else if (e === 2) {
-          if (this.ang === 90 || this.ang === 270) {
-            this.rotX = (this.rotX % 360) + 180;
-          } else {
-            this.rotY = (this.rotY % 360) + 180;
-          }
-        } else if (e === 3) {
-          if (this.ang === 0 || this.ang === 180) {
-            this.rotX = (this.rotX % 360) + 180;
-          } else {
-            this.rotY = (this.rotY % 360) + 180;
+      if (this.disable) {
+        if (e === 'inverse') {
+          // Change Inverse
+          // 2-2
+          if (this.second[e] === true) this.inverse = 100;
+          else this.inverse = 0;
+        } else {
+          // Change Angle
+          // 4-1, 4-2, 4-3, 4-4
+          // @click="utilityEvent(i), send({'name' : k, 'state' : i }, [ang, rotX, rotY])"
+          if (e === 0) {
+            this.ang = (this.ang + 90) % 360
+          } else if (e === 1) {
+            if (this.ang === 0) this.ang = 360;
+            this.ang = (this.ang - 90) % 360
+          } else if (e === 2) {
+            if (this.ang === 90 || this.ang === 270) {
+              this.rotX = (this.rotX % 360) + 180;
+            } else {
+              this.rotY = (this.rotY % 360) + 180;
+            }
+          } else if (e === 3) {
+            if (this.ang === 0 || this.ang === 180) {
+              this.rotX = (this.rotX % 360) + 180;
+            } else {
+              this.rotY = (this.rotY % 360) + 180;
+            }
           }
         }
       }
@@ -660,18 +678,24 @@ export default {
 
     // 2-4, 2-8, 2-9, 3-1
     changedStrokeType(s) {
-      if (s === 'ruler') {
-        this.strokeType = 'line';
-        this.lock = !this.second.ruler;
-      } else if (s === 'shape') {
-        this.strokeType = 'circle';
-        this.lock = !this.second.shape;
-      } else if (s === 'rectangle') {
-        this.strokeType = 'square';
-        this.lock = !this.second.rectangle;
-      } else if (s === 'draw') {
-        this.strokeType = 'dash';
-        this.lock = this.third.draw;
+      if (this.disable) {
+        if (s === 'ruler') {
+          this.strokeType = 'line';
+          this.lock = !this.second.ruler;
+        } else if (s === 'shape') {
+          this.strokeType = 'circle';
+          this.lock = !this.second.shape;
+        } else if (s === 'rectangle') {
+          this.strokeType = 'square';
+          this.lock = !this.second.rectangle;
+        } else if (s === 'draw') {
+          this.strokeType = 'dash';
+          this.lock = this.third.draw;
+        } else if (s === 'zoom' || s === 'info') {
+          this.lock = false;
+        } else {
+          this.lock = true;
+        }
       }
     },
 
@@ -756,7 +780,8 @@ export default {
 
 <style>
 .baseHeaderView {
-  background-color: orange;
+  background-color: black;
+  /*background-color: orange;*/
   width: 100%;
   height: 100%;
   display: flex;
