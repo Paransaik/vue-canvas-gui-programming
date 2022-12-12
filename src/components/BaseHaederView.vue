@@ -74,7 +74,6 @@
                 </div>-->
       </div>
       <div class="line"></div>
-
       <!-- 6 -->
       <!--      <div class="itemBox">
               <div
@@ -369,19 +368,28 @@ export default {
           const h = e.PixelSpacingH;
           const v = e.PixelSpacingV;
 
+          // 이미지 마다 다른 것
           this.imageArr.push({
+            // 차트ID
             chartId: ch,
+            // 마커 정보
             images: im,
+            // 마저 파일
             drawMark: dr,
+            // 생성 일자
             create: cr,
+            // 너비
             pw: pw,
+            // 높이
             ph: ph,
+            // 픽셀스페이싱 높이
             PixelSpacingH: h,
+            // 픽셀스페이싱 너비
             PixelSpacingW: v,
-            // one2 to web rate: 512 * pixcelspacing : fullHeight
-            one2web: yRate,
+            // y 비율:: one2 to web rate: 512 * pixcelspacing : fullHeight
+            one2webRate: yRate,
+            // 마커 배열
             overl: dr.data.overlaies,
-
           })
         })
 
@@ -417,7 +425,7 @@ export default {
     checkedToggling(idx, name, bool) {
       if (this.disable) {
         idx[name] = !bool;
-        console.log(name, idx[name])
+        // console.log(name, idx[name])
         // if (idx[name] === bool) {
         //   this.first.pan = false;
         //   this.second.bright = false;
@@ -436,6 +444,7 @@ export default {
               this.second.ruler = false;
               this.second.tapeline = false;
               this.second.angle = false;
+              this.second.arrow = false;
               this.second.shape = false;
               this.second.rectangle = false;
               this.third.draw = true;
@@ -448,6 +457,7 @@ export default {
               this.second.ruler = false;
               this.second.tapeline = false;
               this.second.angle = false;
+              this.second.arrow = false;
               this.second.shape = false;
               this.second.rectangle = false;
               this.third.draw = true;
@@ -460,6 +470,7 @@ export default {
               this.second.bright = false;
               this.second.tapeline = false;
               this.second.angle = false;
+              this.second.arrow = false;
               this.second.shape = false;
               this.second.rectangle = false;
               this.third.draw = true;
@@ -472,6 +483,7 @@ export default {
               this.second.bright = false;
               this.second.ruler = false;
               this.second.angle = false;
+              this.second.arrow = false;
               this.second.shape = false;
               this.second.rectangle = false;
               this.third.draw = true;
@@ -484,6 +496,20 @@ export default {
               this.second.bright = false;
               this.second.ruler = false;
               this.second.tapeline = false;
+              this.second.arrow = false;
+              this.second.shape = false;
+              this.second.rectangle = false;
+              this.third.draw = true;
+              this.third.nerve = true;
+            }
+            break;
+          case 'arrow':
+            if (this.second.arrow === true) {
+              this.first.pan = false;
+              this.second.bright = false;
+              this.second.ruler = false;
+              this.second.tapeline = false;
+              this.second.angle = false;
               this.second.shape = false;
               this.second.rectangle = false;
               this.third.draw = true;
@@ -497,6 +523,7 @@ export default {
               this.second.ruler = false;
               this.second.tapeline = false;
               this.second.angle = false;
+              this.second.arrow = false;
               this.second.rectangle = false;
               this.third.draw = true;
               this.third.nerve = true;
@@ -521,6 +548,7 @@ export default {
               this.second.ruler = false;
               this.second.tapeline = false;
               this.second.angle = false;
+              this.second.arrow = false;
               this.second.shape = false;
               this.second.rectangle = false;
               this.third.nerve = true;
@@ -533,13 +561,13 @@ export default {
               this.second.ruler = false;
               this.second.tapeline = false;
               this.second.angle = false;
+              this.second.arrow = false;
               this.second.shape = false;
               this.second.rectangle = false;
               this.third.draw = true;
             }
             break;
         }
-        console.log('end case')
       }
     },
 
@@ -594,26 +622,24 @@ export default {
         'time': node.create,
       }
 
-      for (const d of node.overl) {
-        // console.log(d.scene_pos);
-        // console.log(d.style);
-        // console.log(d.transformation);
-        // console.log(d.type);
-        await this.drawing(d, node.one2web);
-      }
-
+      // 마커 배열, y축 이미지 비율 크기, 팬 타입
+      this.drawing(node.overl, node.one2webRate);
+      // console.log(d.scene_pos);
+      // console.log(d.style);
+      // console.log(d.transformation);
+      // console.log(d.type);
     },
 
     // 2-4
     startCoordinate(e) {
-      if (this.second.ruler) {
+      if (this.second.arrow) {
         this.getCoordinate(e);
         this.startX = this.x;
         this.startY = this.y;
       }
     },
     endCoordinate(e) {
-      if (this.second.ruler) {
+      if (this.second.arrow) {
         this.getCoordinate(e);
         this.endX = this.x;
         this.endY = this.y;
@@ -679,9 +705,9 @@ export default {
     // 2-4, 2-8, 2-9, 3-1
     changedStrokeType(s) {
       if (this.disable) {
-        if (s === 'ruler') {
+        if (s === 'arrow') {
           this.strokeType = 'line';
-          this.lock = !this.second.ruler;
+          this.lock = !this.second.arrow;
         } else if (s === 'shape') {
           this.strokeType = 'circle';
           this.lock = !this.second.shape;
@@ -717,36 +743,74 @@ export default {
       this.ang = 0;
       this.rotX = 0;
       this.rotY = 0;
-
-
     },
 
     drawing(d, rate) {
       // RGBA -> RGB
-      this.lineColor = '#' + d.style.pen.color.substring(3, 9);
-      this.lineWidth = d.style.pen.width;
-
-      let canvas = document.querySelector('#VueDrawingCanvas');
-      const context = this.context ? this.context : canvas.getContext('2d');
-      context.strokeStyle = this.lineColor;
-      context.fillStyle = this.lineColor;
-      context.lineWidth = this.lineWidth;
-      context.lineJoin = "round";
-      context.lineCap = "round";
-      context.strokeType = "dash";
-
-      context.beginPath();
-      context.setLineDash([]);
-      if (d.scene_pos['control-points'][0]) {
-        context.moveTo(d.scene_pos['control-points'][0].x * rate + this.coorWidth,
-            d.scene_pos['control-points'][0].y * rate + this.coorHeight);
-      }
-      d.scene_pos['control-points'].forEach(p => {
-        // console.log(this.coorWidth + (p.x * rate));
-        // console.log(this.coorHeight + (p.y * rate));
-        context.lineTo(this.coorWidth + (p.x * rate), this.coorHeight + (p.y * rate));
+      console.log(d);
+      console.log(rate);
+      d.forEach(m => {
+        console.log(m)
+        this.lineColor = '#' + m.style.pen.color.substring(3, 9);
+        this.lineWidth = m.style.pen.width;
+        /*
+        let canvas = this.$refs.VueCanvasDrawing.cavas;
+        let canvas = document.querySelector('#VueDrawingCanvas');
+        const context = this.context ? this.context : canvas.getContext('2d');
+        */
+        let canvas = document.querySelector('#VueDrawingCanvas');
+        const context = this.context ? this.context : canvas.getContext('2d');
+        context.strokeStyle = this.lineColor;
+        context.fillStyle = this.lineColor;
+        context.lineWidth = this.lineWidth;
+        context.lineJoin = "round";
+        context.lineCap = "round";
+        let coordi;
+        switch (m.type) {
+          case "freedraw":
+            context.strokeType = "dash";
+            context.beginPath();
+            context.setLineDash([]);
+            if (m.scene_pos['control-points'][0]) {
+              coordi = this.getOne2Web(m.scene_pos['control-points'][0].x, m.scene_pos['control-points'][0].y, rate);
+              context.lineTo(coordi.x, coordi.y);
+            }
+            m.scene_pos['control-points'].forEach(p => {
+              coordi = this.getOne2Web(p.x, p.y, rate);
+              context.lineTo(coordi.x, coordi.y);
+            })
+            context.stroke();
+            // const strokes = {
+            //   type: 'dash',
+            //   from: {
+            //     x: d.scene_pos['control-points'][0].x,
+            //     y: d.scene_pos['control-points'][0].y,
+            //   },
+            //   coordinates: d.scene_pos['control-points'],
+            //   color: this.lineColor,
+            //   width: this.lineWidth,
+            //   fill: false,
+            //   lineCap: "round",
+            //   lineJoin: "round"
+            // };
+            // this.$refs.VueCanvasDrawing.images.push(strokes);
+            // console.log(this.$refs.VueCanvasDrawing.drawing);
+            // this.$refs.VueCanvasDrawing.redraw(true);
+            // console.log(this.$refs.VueCanvasDrawing.images);
+            break;
+          case "arrow":
+            context.strokeType = "line";
+            context.beginPath();
+            context.setLineDash([]);
+            coordi = this.getOne2Web(m.scene_pos.start.x, m.scene_pos.start.y, rate);
+            context.moveTo(coordi.x, coordi.y);
+            coordi = this.getOne2Web(m.scene_pos.end.x, m.scene_pos.end.y, rate);
+            context.lineTo(coordi.x, coordi.y);
+            context.stroke();
+            break;
+        }
       })
-      context.stroke();
+
     },
 
 
@@ -774,6 +838,12 @@ export default {
       this.x = coordinates.x;
       this.y = coordinates.y;
     },
+
+    getOne2Web( coordiX, coordiY, rate) {
+      console.log(coordiY * rate + this.coorHeight);
+      return {x: coordiX * rate + this.coorWidth, y: coordiY * rate + this.coorHeight};
+    },
+
   },
 }
 </script>
