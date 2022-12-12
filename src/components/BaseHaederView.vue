@@ -416,157 +416,22 @@ export default {
 
   methods: {
     // Button Toggle checked
-    // 저도 이러고 싶지 않았습니다. 저는 백엔드 개발자인데...
-    // 알고리즘은 짰는데 js 문법을 모르겠습니다. 자바로 5분도 안걸리는데...
-    // 알고리즘은 리스트에 해당 pan, bright ... nerve를 넣고 for문을 돌려 함수 파라미터로 넘겨 받는 name과
-    // 일치하는 것을 제외하고 값을 정해주면 됩니다. 제가 생각했을 때 6줄 내로 끝나는 알고리즘입니다.
-    // Refactoring 에정
-    // - 2122.12.07. 정태영 사원
+    // Refactoring 완료
     checkedToggling(idx, name, bool) {
       if (this.disable) {
-        idx[name] = !bool;
-        // console.log(name, idx[name])
-        // if (idx[name] === bool) {
-        //   this.first.pan = false;
-        //   this.second.bright = false;
-        //   this.second.ruler = false;
-        //   this.second.tapeline = false;
-        //   this.second.angle = false;
-        //   this.second.shape = false;
-        //   this.second.rectangle = false;
-        //   this.third.draw = true;
-        //   this.third.nerve = true;
-        // }
-        switch (name) {
-          case 'pan':
-            if (this.first.pan === true) {
-              this.second.bright = false;
-              this.second.ruler = false;
-              this.second.tapeline = false;
-              this.second.angle = false;
-              this.second.arrow = false;
-              this.second.shape = false;
-              this.second.rectangle = false;
-              this.third.draw = true;
-              this.third.nerve = true;
-            }
-            break;
-          case 'bright':
-            if (this.second.bright === true) {
-              this.first.pan = false;
-              this.second.ruler = false;
-              this.second.tapeline = false;
-              this.second.angle = false;
-              this.second.arrow = false;
-              this.second.shape = false;
-              this.second.rectangle = false;
-              this.third.draw = true;
-              this.third.nerve = true;
-            }
-            break;
-          case 'ruler':
-            if (this.second.ruler === true) {
-              this.first.pan = false;
-              this.second.bright = false;
-              this.second.tapeline = false;
-              this.second.angle = false;
-              this.second.arrow = false;
-              this.second.shape = false;
-              this.second.rectangle = false;
-              this.third.draw = true;
-              this.third.nerve = true;
-            }
-            break;
-          case 'tapeline':
-            if (this.second.tapeline === true) {
-              this.first.pan = false;
-              this.second.bright = false;
-              this.second.ruler = false;
-              this.second.angle = false;
-              this.second.arrow = false;
-              this.second.shape = false;
-              this.second.rectangle = false;
-              this.third.draw = true;
-              this.third.nerve = true;
-            }
-            break;
-          case 'angle':
-            if (this.second.angle === true) {
-              this.first.pan = false;
-              this.second.bright = false;
-              this.second.ruler = false;
-              this.second.tapeline = false;
-              this.second.arrow = false;
-              this.second.shape = false;
-              this.second.rectangle = false;
-              this.third.draw = true;
-              this.third.nerve = true;
-            }
-            break;
-          case 'arrow':
-            if (this.second.arrow === true) {
-              this.first.pan = false;
-              this.second.bright = false;
-              this.second.ruler = false;
-              this.second.tapeline = false;
-              this.second.angle = false;
-              this.second.shape = false;
-              this.second.rectangle = false;
-              this.third.draw = true;
-              this.third.nerve = true;
-            }
-            break;
-          case 'shape':
-            if (this.second.shape === true) {
-              this.first.pan = false;
-              this.second.bright = false;
-              this.second.ruler = false;
-              this.second.tapeline = false;
-              this.second.angle = false;
-              this.second.arrow = false;
-              this.second.rectangle = false;
-              this.third.draw = true;
-              this.third.nerve = true;
-            }
-            break;
-          case 'rectangle':
-            if (this.second.rectangle === true) {
-              this.first.pan = false;
-              this.second.bright = false;
-              this.second.ruler = false;
-              this.second.tapeline = false;
-              this.second.angle = false;
-              this.second.shape = false;
-              this.third.draw = true;
-              this.third.nerve = true;
-            }
-            break;
-          case 'draw':
-            if (this.third.draw === false) {
-              this.first.pan = false;
-              this.second.bright = false;
-              this.second.ruler = false;
-              this.second.tapeline = false;
-              this.second.angle = false;
-              this.second.arrow = false;
-              this.second.shape = false;
-              this.second.rectangle = false;
-              this.third.nerve = true;
-            }
-            break;
-          case 'nerve':
-            if (this.third.nerve === false) {
-              this.first.pan = false;
-              this.second.bright = false;
-              this.second.ruler = false;
-              this.second.tapeline = false;
-              this.second.angle = false;
-              this.second.arrow = false;
-              this.second.shape = false;
-              this.second.rectangle = false;
-              this.third.draw = true;
-            }
-            break;
+        console.log(name, idx[name])
+        if (idx[name] === bool) {
+          this.first.pan = false;
+          this.second.bright = false;
+          this.second.ruler = false;
+          this.second.tapeline = false;
+          this.second.angle = false;
+          this.second.arrow = false;
+          this.second.shape = false;
+          this.second.rectangle = false;
+          this.third.draw = true;
+          this.third.nerve = true;
+          idx[name] = !bool;
         }
       }
     },
@@ -839,8 +704,7 @@ export default {
       this.y = coordinates.y;
     },
 
-    getOne2Web( coordiX, coordiY, rate) {
-      console.log(coordiY * rate + this.coorHeight);
+    getOne2Web(coordiX, coordiY, rate) {
       return {x: coordiX * rate + this.coorWidth, y: coordiY * rate + this.coorHeight};
     },
 
