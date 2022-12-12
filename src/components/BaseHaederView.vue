@@ -610,74 +610,70 @@ export default {
       this.rotY = 0;
     },
 
+    /***
+     * One2 => Web
+     * freedraw => dash
+     * arrow => line
+     * length => square
+     * angle => line
+     * ellipse => circle
+     * */
     drawing(d, rate) {
-      // RGBA -> RGB
-      console.log(d);
-      console.log(rate);
+      let canvas = document.querySelector('#VueDrawingCanvas');
+      const context = this.context ? this.context : canvas.getContext('2d');
+      let coordi;
       d.forEach(m => {
-        console.log(m)
         this.lineColor = '#' + m.style.pen.color.substring(3, 9);
         this.lineWidth = m.style.pen.width;
-        /*
-        let canvas = this.$refs.VueCanvasDrawing.cavas;
-        let canvas = document.querySelector('#VueDrawingCanvas');
-        const context = this.context ? this.context : canvas.getContext('2d');
-        */
-        let canvas = document.querySelector('#VueDrawingCanvas');
-        const context = this.context ? this.context : canvas.getContext('2d');
-        context.strokeStyle = this.lineColor;
-        context.fillStyle = this.lineColor;
-        context.lineWidth = this.lineWidth;
-        context.lineJoin = "round";
-        context.lineCap = "round";
-        let coordi;
+        const stroke = {
+          type: '',
+          from: {
+            x: 0,
+            y: 0,
+          },
+          coordinates: [],
+          color: this.lineColor,
+          width: this.lineWidth,
+          fill: false,
+          lineCap: "round",
+          lineJoin: "round"
+        };
         switch (m.type) {
           case "freedraw":
-            context.strokeType = "dash";
-            context.beginPath();
-            context.setLineDash([]);
-            if (m.scene_pos['control-points'][0]) {
-              coordi = this.getOne2Web(m.scene_pos['control-points'][0].x, m.scene_pos['control-points'][0].y, rate);
-              context.lineTo(coordi.x, coordi.y);
-            }
+            stroke.type = "dash";
+            coordi = this.getOne2Web(m.scene_pos['control-points'][0].x, m.scene_pos['control-points'][0].y, rate);
+            stroke.from.x = coordi.x;
+            stroke.from.y = coordi.y;
             m.scene_pos['control-points'].forEach(p => {
               coordi = this.getOne2Web(p.x, p.y, rate);
-              context.lineTo(coordi.x, coordi.y);
+              stroke.coordinates.push({x: coordi.x, y: coordi.y});
             })
-            context.stroke();
-            // const strokes = {
-            //   type: 'dash',
-            //   from: {
-            //     x: d.scene_pos['control-points'][0].x,
-            //     y: d.scene_pos['control-points'][0].y,
-            //   },
-            //   coordinates: d.scene_pos['control-points'],
-            //   color: this.lineColor,
-            //   width: this.lineWidth,
-            //   fill: false,
-            //   lineCap: "round",
-            //   lineJoin: "round"
-            // };
-            // this.$refs.VueCanvasDrawing.images.push(strokes);
-            // console.log(this.$refs.VueCanvasDrawing.drawing);
-            // this.$refs.VueCanvasDrawing.redraw(true);
-            // console.log(this.$refs.VueCanvasDrawing.images);
+            this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
             break;
           case "arrow":
-            context.strokeType = "line";
-            context.beginPath();
-            context.setLineDash([]);
+            stroke.type = "line";
             coordi = this.getOne2Web(m.scene_pos.start.x, m.scene_pos.start.y, rate);
-            context.moveTo(coordi.x, coordi.y);
+            stroke.from.x = coordi.x;
+            stroke.from.y = coordi.y;
             coordi = this.getOne2Web(m.scene_pos.end.x, m.scene_pos.end.y, rate);
-            context.lineTo(coordi.x, coordi.y);
-            context.stroke();
+            stroke.coordinates.push({x: coordi.x, y: coordi.y});
+            this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
+            break;
+          case "length":
+            stroke.type = "line";
+            break;
+          case "rectangle":
+            stroke.type = "square";
+            break;
+          case "angle":
+            stroke.type = "line";
+            break;
+          case "ellipse":
+            stroke.type = "circle";
             break;
         }
       })
-
     },
-
 
     save() {
       console.log("Call by method save");

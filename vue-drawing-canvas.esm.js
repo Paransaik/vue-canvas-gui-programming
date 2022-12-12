@@ -356,6 +356,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
       context.lineWidth = strokes.width;
       context.lineJoin = strokes.lineJoin === undefined ? this.lineJoin : strokes.lineJoin;
       context.lineCap = strokes.lineCap === undefined ? this.lineCap : strokes.lineCap;
+      console.log(context);
       context.beginPath();
       context.setLineDash([]);
 
@@ -364,6 +365,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
       } else {
         context.moveTo(strokes.from.x, strokes.from.y);
         strokes.coordinates.forEach(stroke => {
+          console.log(stroke);
           context.lineTo(stroke.x, stroke.y);
 
           if(strokes.type !== 'square' && strokes.type !== 'dash') {
