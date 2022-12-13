@@ -176,11 +176,12 @@
 </template>
 
 <script>
-import '@/assets/css/utility.css'
-import {xmlToJson} from '@/assets/js/x2j.js'
+import '@/assets/css/utility.css';
+import {xmlToJson} from '@/assets/js/x2j.js';
 
-import axios from "axios"
-import drf from '@/api/drf'
+import axios from "axios";
+import drf from '@/api/drf';
+// import {}
 import {mapGetters, mapActions} from 'vuex';
 import Constant from "@/common/Constant.js";
 import VueDrawingCanvas from "vue-drawing-canvas";
@@ -205,6 +206,9 @@ export default {
     coorHeight: 0,
     // halfHeight
     halfHeight: 0,
+
+    // 모든 마커 정보
+    strokes: [],
 
     // utility ===================================================
     lock: true,
@@ -374,7 +378,7 @@ export default {
             chartId: ch,
             // 마커 정보
             images: im,
-            // 마저 파일
+            // 마커 파일
             drawMark: dr,
             // 생성 일자
             create: cr,
@@ -611,7 +615,7 @@ export default {
     },
 
     /***
-     * One2 => Web
+     * One2 => Canvas
      * freedraw => dash
      * arrow => line
      * length => square
@@ -676,11 +680,34 @@ export default {
     },
 
     save() {
-      console.log("Call by method save");
-      const link = document.createElement('a');
-      link.download = 'param'; // filename
-      link.href = this.image;
-      link.click();
+      var data = {
+        "manipulate": {"effect": {"invert": false, "sharpen": 0}, "windowing": {"wc": 1000, "ww": 4000}},
+        "overlaies": [{
+          "scene_pos": {
+            "end": {"x": 0.21756374261872313, "y": 20.378470558620378},
+            "start": {"x": 0.50764873277702005, "y": -12.038527091569339}
+          },
+          "style": {
+            "brush": {"color": "#00ffffff"},
+            "pen": {"cap": 32, "color": "#ff0000ff", "join": 128, "style": 1, "width": 1}
+          },
+          "transformation": {"rot_deg": 0},
+          "type": "arrow"
+        }]
+      }
+      // const obj = JSON.parse(json);
+      const s = JSON.stringify(data);
+      console.log(s);
+      axios({
+        url: drf.patient.saveDrwingMarker('1.2.410.200062.2.1.20221013134141642.12.62098.726.713'),
+        method: 'post',
+        data: s
+      })
+
+      // const link = document.createElement('a');
+      // link.download = 'param'; // filename
+      // link.href = this.image;
+      // link.click();
     },
 
     // base ===================================================
