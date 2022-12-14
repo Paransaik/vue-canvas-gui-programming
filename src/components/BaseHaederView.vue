@@ -197,7 +197,11 @@ export default {
 
   data: () => ({
     disable: false,
+    rated: 0,
 
+    // Save marker
+    overlayes: [],
+    lastOctColorCode: '',
     // Canvas
     canvasFullWidth: 0,
     canvasFullHeight: 0,
@@ -491,12 +495,9 @@ export default {
         'time': node.create,
       }
 
+      this.rated = node.one2webRate;
       // 마커 배열, y축 이미지 비율 크기, 팬 타입
-      this.drawing(node.overl, node.one2webRate);
-      // console.log(d.scene_pos);
-      // console.log(d.style);
-      // console.log(d.transformation);
-      // console.log(d.type);
+      this.importImageDrawing(node.overl);
     },
 
     // 2-4
@@ -518,6 +519,8 @@ export default {
         const distance = Math.pow(Math.pow(this.startY - this.endY, 2) + Math.pow(this.startX - this.endX, 2), 0.5) * rate * pixelSpacing;
         console.log(distance);
       }
+
+      // this.save();
     },
 
     // 2-1, 2-3
@@ -615,18 +618,20 @@ export default {
     },
 
     /***
-     * One2 => Canvas
-     * freedraw => dash
-     * arrow => line
-     * length => square
-     * angle => line
-     * ellipse => circle
+     * One2       => Canvas,  pen.style
+     * freedraw   => dash       1
+     * arrow      => line       1
+     * length     => line       0
+     * angle      => line       0
+     * rectangle  => square     1
+     * ellipse    => circle     1
      * */
-    drawing(d, rate) {
+    importImageDrawing(d) {
       let canvas = document.querySelector('#VueDrawingCanvas');
       const context = this.context ? this.context : canvas.getContext('2d');
       let coordi;
       d.forEach(m => {
+        this.lastOctColorCode = m.style.pen.color;
         this.lineColor = '#' + m.style.pen.color.substring(3, 9);
         this.lineWidth = m.style.pen.width;
         const stroke = {
@@ -642,29 +647,43 @@ export default {
           lineCap: "round",
           lineJoin: "round"
         };
+
         switch (m.type) {
           case "freedraw":
             stroke.type = "dash";
-            coordi = this.getOne2Web(m.scene_pos['control-points'][0].x, m.scene_pos['control-points'][0].y, rate);
+            coordi = this.getOne2Web(m.scene_pos['control-points'][0].x, m.scene_pos['control-points'][0].y);
             stroke.from.x = coordi.x;
             stroke.from.y = coordi.y;
             m.scene_pos['control-points'].forEach(p => {
-              coordi = this.getOne2Web(p.x, p.y, rate);
+              coordi = this.getOne2Web(p.x, p.y);
               stroke.coordinates.push({x: coordi.x, y: coordi.y});
             })
+            // this.$refs.VueCanvasDrawing.drawing = true;
             this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
+            this.$refs.VueCanvasDrawing.images.push(stroke);
             break;
           case "arrow":
             stroke.type = "line";
-            coordi = this.getOne2Web(m.scene_pos.start.x, m.scene_pos.start.y, rate);
+            coordi = this.getOne2Web(m.scene_pos.start.x, m.scene_pos.start.y);
             stroke.from.x = coordi.x;
             stroke.from.y = coordi.y;
-            coordi = this.getOne2Web(m.scene_pos.end.x, m.scene_pos.end.y, rate);
+            coordi = this.getOne2Web(m.scene_pos.end.x, m.scene_pos.end.y);
             stroke.coordinates.push({x: coordi.x, y: coordi.y});
+            // this.$refs.VueCanvasDrawing.drawing = true;
             this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
+            this.$refs.VueCanvasDrawing.images.push(stroke);
+            console.log(this.$refs.VueCanvasDrawing.images);
+            console.log(stroke);
             break;
           case "length":
             stroke.type = "line";
+            coordi = this.getOne2Web(m.scene_pos.start.x, m.scene_pos.start.y);
+            stroke.from.x = coordi.x;
+            stroke.from.y = coordi.y;
+            coordi = this.getOne2Web(m.scene_pos.end.x, m.scene_pos.end.y);
+            stroke.coordinates.push({x: coordi.x, y: coordi.y});
+            // value-box 체크 확인
+            this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
             break;
           case "rectangle":
             stroke.type = "square";
@@ -679,8 +698,18 @@ export default {
       })
     },
 
-    save() {
+    async save() {
+      // sharpen, windowing 수정 필요
+      // console.log(this.overlayes[0]);
+      console.log(this.$refs.VueCanvasDrawing.images);
+
+      await this.getRefImage2Overlayes();
       var data = {
+        "manipulate": {"effect": {"invert": this.second.inverse, "sharpen": 0}, "windowing": {"wc": 1000, "ww": 4000}},
+        "overlaies": this.overlayes
+      }
+
+      /*var data = {
         "manipulate": {"effect": {"invert": false, "sharpen": 0}, "windowing": {"wc": 1000, "ww": 4000}},
         "overlaies": [{
           "scene_pos": {
@@ -692,9 +721,10 @@ export default {
             "pen": {"cap": 32, "color": "#ff0000ff", "join": 128, "style": 1, "width": 1}
           },
           "transformation": {"rot_deg": 0},
-          "type": "arrow"
+          "type": "freedraw"
         }]
-      }
+      }*/
+
       // const obj = JSON.parse(json);
       const s = JSON.stringify(data);
       console.log(s);
@@ -704,16 +734,13 @@ export default {
         data: s
       })
 
+
       // const link = document.createElement('a');
       // link.download = 'param'; // filename
       // link.href = this.image;
       // link.click();
     },
 
-    // base ===================================================
-    ...mapActions([
-      Constant.GET_PATIENTSERIESLIST,
-    ]),
 
     // async setImage(event) {
     //   let URL = window.URL;
@@ -727,10 +754,47 @@ export default {
       this.y = coordinates.y;
     },
 
-    getOne2Web(coordiX, coordiY, rate) {
-      return {x: coordiX * rate + this.coorWidth, y: coordiY * rate + this.coorHeight};
+    getOne2Web(coordiX, coordiY) {
+      return {x: coordiX * this.rated + this.coorWidth, y: coordiY * this.rated + this.coorHeight};
     },
 
+    getWeb2One(coordiX, coordiY) {
+      return {x: (coordiX - this.coorWidth) / this.rated, y: (coordiY - this.coorHeight) / this.rated};
+    },
+
+    getRefImage2Overlayes() {
+      console.log(this.$refs.VueCanvasDrawing.images);
+      this.$refs.VueCanvasDrawing.images.forEach(e => {
+
+        const newArr = e.coordinates.map(e => {
+          const coordi = this.getWeb2One(e.x, e.y);
+          return {x: coordi.x, y: coordi.y};
+        })
+
+        if (e.coordinates.length !== 0) {
+          this.overlayes.push({
+            // 1. scene_pos
+            "scene_pos": {
+              "control-points": newArr
+            },
+            // 2. style
+            "style": {
+              "brush": {"color": "#0000ff00"},
+              "pen": {"cap": 32, "color": 'ff' + e.color, "join": 128, "style": 1, "width": e.width}
+            },
+            // 3. transformation
+            "transformation": {"rot_deg": 0},
+            // 4. type
+            "type": "freedraw"
+          })
+        }
+      })
+    },
+
+    // base ===================================================
+    ...mapActions([
+      Constant.GET_PATIENTSERIESLIST,
+    ]),
   },
 }
 </script>
