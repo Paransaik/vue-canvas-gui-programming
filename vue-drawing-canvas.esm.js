@@ -3,12 +3,12 @@ import { defineComponent, isVue2, h } from 'vue-demi';
 /* eslint-disable no-debugger, no-console */
 var VueDrawingCanvas = /*#__PURE__*/defineComponent({
   name: 'VueDrawingCanvas',
-
   props: {
     strokeType: {
       type: String,
       validator: value => {
-        return ['dash', 'line', 'square', 'circle', 'triangle', 'half_triangle'].indexOf(value) !== -1;
+        // 1
+        return ['dash', 'line', 'arrow', 'square', 'circle', 'triangle', 'half_triangle'].indexOf(value) !== -1;
       },
       default: () => 'dash'
     },
@@ -142,11 +142,6 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
   },
 
   methods: {
-    // writeText() {
-    //   let canvas = document.querySelector('#' + this.canvasId);
-    //   this.wrapText(this.context, watermark.source, watermark.x, watermark.y, watermark.fontStyle.width, watermark.fontStyle.lineHeight);
-    // },
-
     async setContext() {
       let canvas = document.querySelector('#' + this.canvasId);
       this.context = this.context ? this.context : canvas.getContext('2d');
@@ -178,7 +173,6 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
       this.clear();
       this.context.fillStyle = this.backgroundColor;
       // this.context.fillRect(0, 0, Number(this.width), Number(this.height));
-      // eslint-disable-next-line vue/valid-next-tick
       await this.$nextTick(async () => {
         await this.drawBackgroundImage();
       });
@@ -189,7 +183,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
       if (!this.loadedImage) {
         return new Promise(resolve => {
           if (!this.backgroundImage) {
-            resolve();
+            resolve();나온단
             return;
           }
           const image = new Image();
@@ -236,7 +230,12 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
           coordinates: [],
           color: this.eraser ? this.backgroundColor : this.color,
           width: this.lineWidth,
-          fill: this.eraser || this.strokeType === 'dash' || this.strokeType === 'line' ? false : this.fillShape,
+          // 2
+          fill: this.eraser ||
+                this.strokeType === 'dash' ||
+                this.strokeType === 'line' ||
+                this.strokeType === 'arrow'
+                    ? false : this.fillShape,
           lineCap: this.lineCap,
           lineJoin: this.lineJoin
         };
@@ -249,17 +248,23 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
         if (!this.context) {
           this.setContext();
         }
-        // if (event === 0){
-        //   this.drawShape(this.context, this.strokes, false);
-        // } else {
-        console.log(this.strokeType);
+
         let coordinate = this.getCoordinates(event);
+
         if (this.eraser || this.strokeType === 'dash') {
           this.strokes.coordinates.push(coordinate);
           this.drawShape(this.context, this.strokes, false);
         } else {
           switch (this.strokeType) {
             case 'line':
+              this.guides = [{
+                x: coordinate.x,
+                y: coordinate.y
+              }];
+              break;
+
+            // 3
+            case 'arrow':
               this.guides = [{
                 x: coordinate.x,
                 y: coordinate.y
@@ -321,10 +326,10 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
               }];
               break;
           }
+
+          this.drawGuide(true);
         }
-        this.drawGuide(true);
       }
-      // }
     },
 
     drawGuide(closingPath) {
@@ -352,6 +357,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
     },
 
     drawShape(context, strokes, closingPath) {
+      // this.drawing = true;
       context.strokeStyle = strokes.color;
       context.fillStyle = strokes.color;
       context.lineWidth = strokes.width;
@@ -367,7 +373,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
         strokes.coordinates.forEach(stroke => {
           context.lineTo(stroke.x, stroke.y);
 
-          if(strokes.type !== 'square' && strokes.type !== 'dash') {
+          if (strokes.type === 'arrow') {
             // 11.22. Arrow Mark
             var aWidth = 5;
             var aLength = 12;
@@ -378,7 +384,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
             context.translate(stroke.x, stroke.y);
             context.rotate(angle);
             context.fillStyle = strokes.color;
-            context.moveTo(length - aLength, - aWidth);
+            context.moveTo(length - aLength, -aWidth);
             context.lineTo(length, 0);
             context.lineTo(length - aLength, aWidth);
             context.fill();
@@ -401,6 +407,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
 
     stopDraw() {
       if (this.drawing) {
+        console.log('call by stopDraw')
         this.strokes.coordinates = this.guides.length > 0 ? this.guides : this.strokes.coordinates;
         this.images.push(this.strokes);
         this.redraw(true);
@@ -464,7 +471,12 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
             if (baseCanvasContext) {
               baseCanvasContext.globalCompositeOperation = stroke.type === 'eraser' ? 'destination-out' : 'source-over';
               if (stroke.type !== 'circle' || stroke.type === 'circle' && stroke.coordinates.length > 0) {
-                this.drawShape(baseCanvasContext, stroke, stroke.type === 'eraser' || stroke.type === 'dash' || stroke.type === 'line' ? false : true);
+                // 4
+                this.drawShape(baseCanvasContext, stroke, stroke.type === 'eraser' ||
+                                                                    stroke.type === 'dash' ||
+                                                                    stroke.type === 'line' ||
+                                                                    stroke.type === 'arrow'
+                                                                        ? false : true);
               }
             }
           });
@@ -535,6 +547,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
         let tempHeight = this.outputHeight === undefined ? this.height : this.outputHeight;
         temp.width = Number(tempWidth);
         temp.height = Number(tempHeight);
+
         if (tempCtx) {
           tempCtx.drawImage(canvas, 0, 0, Number(tempWidth), Number(tempHeight));
           this.$emit('update:image', temp.toDataURL('image/' + this.saveAs, 1));
