@@ -679,7 +679,7 @@ export default {
             stroke.from.x = coordi.x;
             stroke.from.y = coordi.y;
             coordi = this.getOne2Web(m.scene_pos.end.x, m.scene_pos.end.y);
-            stroke.coordinates.push({x: coordi.x, y: coordi.y, "value-box": ""});
+            stroke.coordinates.push({x: coordi.x, y: coordi.y, valueBox: m.scene_pos["value-box"]});
             // value-box 체크 확인
             this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
             this.$refs.VueCanvasDrawing.images.push(stroke);
@@ -760,81 +760,94 @@ export default {
     },
 
     // 내가 그린 걸 저장하는 함수
+    // p.s. 제가 안맞추고 싶은 게 아니라 당사 네이밍 컨벤션이 이렇습니다... -정태영 사원
     getRefImage2Overlayes() {
       this.$refs.VueCanvasDrawing.images.forEach(e => {
-        console.log(e);
-        const data = {};
-        let coordi;
-        const scene_pos = {};
-        const start = {}, end = {}
-        const value_box = {};
-        let dataType;
-        let newArr;
+            console.log(e);
+            const data = {"style": {}};
+            let coordi;
+            const scene_pos = {};
+            const start = {}, end = {}
+            const value_box = {};
+            let dataType;
+            let newArr;
+            switch (e.type) {
+              case "dash":
+                newArr = e.coordinates.map(c => {
+                  coordi = this.getWeb2One(c.x, c.y);
+                  return {x: coordi.x, y: coordi.y};
+                })
+                scene_pos["control-points"] = newArr;
+                data["style"]["brush"] = {"color": "#00ffffff"};
+                dataType = "freedraw";
+                break;
+              case "arrow":
+                coordi = this.getWeb2One(e.from.x, e.from.y);
+                start["x"] = coordi.x;
+                start["y"] = coordi.y;
+                coordi = this.getWeb2One(e.coordinates[0].x, e.coordinates[0].y);
+                end["x"] = coordi.x;
+                end["y"] = coordi.y;
+                scene_pos["start"] = start;
+                scene_pos["end"] = end;
+                data["style"]["brush"] = {"color": "#00ffffff"};
+                dataType = "arrow";
+                break;
+              case "line":
+                coordi = this.getWeb2One(e.from.x, e.from.y);
+                start["x"] = coordi.x;
+                start["y"] = coordi.y;
+                coordi = this.getWeb2One(e.coordinates[0].x, e.coordinates[0].y);
+                end["x"] = coordi.x;
+                end["y"] = coordi.y;
+                value_box["x"] = e.coordinates[0].valueBox.x;
+                value_box["y"] = e.coordinates[0].valueBox.y;
+                scene_pos["start"] = start;
+                scene_pos["end"] = end;
+                scene_pos["value-box"] = value_box;
+                data["style"]["value-box"] = {
+                  "brush": {"color": "#00ffffff"},
+                  "pen": {"cap": 32, "color": "#00ffffff", "join": 128, "style": 0, "width": 0},
+                  "text": {"color": "#ffffd700", "font-size": 12}
+                };
+                dataType = "length";
+                break;
+              case "rectangle":
+                break;
+              case "angle":
+                break;
+              case "ellipse":
+                break;
+            }
 
-        switch (e.type) {
-          case "dash":
-            newArr = e.coordinates.map(c => {
-              coordi = this.getWeb2One(c.x, c.y);
-              return {x: coordi.x, y: coordi.y};
-            })
-            scene_pos["control-points"] = newArr;
-            dataType = "freedraw";
-            break;
-          case "arrow":
-            coordi = this.getWeb2One(e.from.x, e.from.y);
-            start["x"] = coordi.x;
-            start["y"] = coordi.y;
-            coordi = this.getWeb2One(e.coordinates[0].x, e.coordinates[0].y);
-            end["x"] = coordi.x;
-            end["y"] = coordi.y;
-            scene_pos["start"] = start;
-            scene_pos["end"] = end;
-            dataType = "arrow";
-            break;
-          case "line":
-            coordi = this.getWeb2One(e.from.x, e.from.y);
-            start["x"] = coordi.x;
-            start["y"] = coordi.y;
-            coordi = this.getWeb2One(e.coordinates[0].x, e.coordinates[0].y);
-            end["x"] = coordi.x;
-            end["y"] = coordi.y;
-            scene_pos["start"] = start;
-            scene_pos["end"] = end;
-            value_box["x"] = (start["x"] + end["x"]) / 2;
-            value_box["y"] = (start["y"] + end["y"]) / 2;
-            dataType = "length";
-            break;
-          case "rectangle":
-            break;
-          case "angle":
-            break;
-          case "ellipse":
-            break;
-        }
 
-
-        if (e.coordinates.length !== 0) {
-          // 1. scene_pos
-          data["scene_pos"] = scene_pos;
-          // 2. style
-          data["style"] = {
-            "brush": {"color": "#00ffffff"},
-            "pen": {"cap": 32, "color": '#ff' + e.color.substring(1), "join": 128, "style": 1, "width": e.width}
-          };
-          // 3. transformation
-          data["transformation"] = {"rot_deg": 0};
-          // 4. type
-          data["type"] = dataType;
-          console.log(data);
-          this.overlayes.push(data);
-        }
-      })
+            if (e.coordinates.length !== 0) {
+              // 1. scene_pos
+              data["scene_pos"] = scene_pos;
+              // 2. style
+              data["style"]["pen"] = {
+                "cap": 32,
+                "color": '#ff' + e.color.substring(1),
+                "join": 128,
+                "style": 1,
+                "width": e.width
+              };
+              // 3. transformation
+              data["transformation"] = {"rot_deg": 0};
+              // 4. type
+              data["type"] = dataType;
+              console.log(data);
+              this.overlayes.push(data);
+            }
+          }
+      )
     },
 
-    // base ===================================================
-    ...mapActions([
-      Constant.GET_PATIENTSERIESLIST,
-    ]),
+// base ===================================================
+    ...
+        mapActions([
+          Constant.GET_PATIENTSERIESLIST,
+        ]),
   },
 }
 </script>
