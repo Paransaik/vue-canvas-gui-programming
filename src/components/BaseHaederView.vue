@@ -64,28 +64,28 @@
           <img src="@/assets/img/utils/icon-implant.png"/>
           <span class="same">임플란트 식립</span>
         </div>
-        <!--        <div
-                    class="item"
-                    v-for="(v, k) in fifth" :key="k"
-                    @click="fifth[k] = !v"
-                    :class="{isToggle:v}"
-                >
-                  <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
-                </div>-->
+        <!--<div
+            class="item"
+            v-for="(v, k) in fifth" :key="k"
+            @click="fifth[k] = !v"
+            :class="{isToggle:v}"
+        >
+          <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
+        </div>-->
       </div>
       <div class="line"></div>
       <!-- 6 -->
-      <!--      <div class="itemBox">
-              <div
-                  class="item"
-                  v-for="(v, k) in sixth" :key="k"
-                  @click="sixth[k] = !v"
-                  :class="{isToggle:v}"
-              >
-                <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
-              </div>
-            </div>
-            <div class="line"></div>-->
+      <!--<div class="itemBox">
+        <div
+            class="item"
+            v-for="(v, k) in sixth" :key="k"
+            @click="sixth[k] = !v"
+            :class="{isToggle:v}"
+        >
+          <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
+        </div>
+      </div>
+      <div class="line"></div>-->
 
       <!-- 7 -->
       <span class="same" style="padding: 0 0 0 3px;">초기화</span>
@@ -134,11 +134,11 @@
             }"
         />
       </div>
+
       <div class="thumbnail" :class="{ thumbList:btnchg }">
         <div class="filterBtns" :class="{ filterCng:btnchg }">
           <div>
           <span class="filterName">Date {{ brightness }}
-            <!-- x-axis: <strong>{{ x }}</strong>, y-axis: <strong>{{ y }}</strong> -->
           </span>
             <select class="filterSelect">
               <option>All</option>
@@ -165,7 +165,6 @@
                 데이터 전처리 필요 <br>
                 Chart Id:: {{ dataInfo.chartId }} <br>
                 Unix Time:: {{ dataInfo.time }} <br>
-                <!-- {{ imageArr }} -->
               </div>
             </div>
           </div>
@@ -201,7 +200,6 @@ export default {
 
     // Save marker
     overlayes: [],
-    lastOctColorCode: '',
     // Canvas
     canvasFullWidth: 0,
     canvasFullHeight: 0,
@@ -502,14 +500,14 @@ export default {
 
     // 2-4
     startCoordinate(e) {
-      if (this.second.arrow) {
+      if (this.second.ruler) {
         this.getCoordinate(e);
         this.startX = this.x;
         this.startY = this.y;
       }
     },
     endCoordinate(e) {
-      if (this.second.arrow) {
+      if (this.second.ruler) {
         this.getCoordinate(e);
         this.endX = this.x;
         this.endY = this.y;
@@ -519,8 +517,6 @@ export default {
         const distance = Math.pow(Math.pow(this.startY - this.endY, 2) + Math.pow(this.startX - this.endX, 2), 0.5) * rate * pixelSpacing;
         console.log(distance);
       }
-
-      // this.save();
     },
 
     // 2-1, 2-3
@@ -577,8 +573,11 @@ export default {
     // 2-4, 2-8, 2-9, 3-1
     changedStrokeType(s) {
       if (this.disable) {
-        if (s === 'arrow') {
+        if (s === 'ruler') {
           this.strokeType = 'line';
+          this.lock = !this.second.ruler;
+        } else if (s === 'arrow') {
+          this.strokeType = 'arrow';
           this.lock = !this.second.arrow;
         } else if (s === 'shape') {
           this.strokeType = 'circle';
@@ -626,12 +625,14 @@ export default {
      * rectangle  => square     1
      * ellipse    => circle     1
      * */
+    // One2에서 저장된 걸 불러오는 함수
     importImageDrawing(d) {
       let canvas = document.querySelector('#VueDrawingCanvas');
       const context = this.context ? this.context : canvas.getContext('2d');
       let coordi;
       d.forEach(m => {
-        this.lastOctColorCode = m.style.pen.color;
+        console.log('importImageDrawing data');
+        console.log(m);
         this.lineColor = '#' + m.style.pen.color.substring(3, 9);
         this.lineWidth = m.style.pen.width;
         const stroke = {
@@ -645,7 +646,7 @@ export default {
           width: this.lineWidth,
           fill: false,
           lineCap: "round",
-          lineJoin: "round"
+          lineJoin: "round",
         };
 
         switch (m.type) {
@@ -658,22 +659,19 @@ export default {
               coordi = this.getOne2Web(p.x, p.y);
               stroke.coordinates.push({x: coordi.x, y: coordi.y});
             })
-            // this.$refs.VueCanvasDrawing.drawing = true;
             this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
             this.$refs.VueCanvasDrawing.images.push(stroke);
             break;
           case "arrow":
-            stroke.type = "line";
+            stroke.type = "arrow";
             coordi = this.getOne2Web(m.scene_pos.start.x, m.scene_pos.start.y);
             stroke.from.x = coordi.x;
             stroke.from.y = coordi.y;
             coordi = this.getOne2Web(m.scene_pos.end.x, m.scene_pos.end.y);
             stroke.coordinates.push({x: coordi.x, y: coordi.y});
-            // this.$refs.VueCanvasDrawing.drawing = true;
             this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
             this.$refs.VueCanvasDrawing.images.push(stroke);
             console.log(this.$refs.VueCanvasDrawing.images);
-            console.log(stroke);
             break;
           case "length":
             stroke.type = "line";
@@ -681,9 +679,10 @@ export default {
             stroke.from.x = coordi.x;
             stroke.from.y = coordi.y;
             coordi = this.getOne2Web(m.scene_pos.end.x, m.scene_pos.end.y);
-            stroke.coordinates.push({x: coordi.x, y: coordi.y});
+            stroke.coordinates.push({x: coordi.x, y: coordi.y, "value-box": ""});
             // value-box 체크 확인
             this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
+            this.$refs.VueCanvasDrawing.images.push(stroke);
             break;
           case "rectangle":
             stroke.type = "square";
@@ -698,11 +697,9 @@ export default {
       })
     },
 
+    // 내가 그린 걸 저장하는 함수
     async save() {
       // sharpen, windowing 수정 필요
-      // console.log(this.overlayes[0]);
-      console.log(this.$refs.VueCanvasDrawing.images);
-
       await this.getRefImage2Overlayes();
       var data = {
         "manipulate": {"effect": {"invert": this.second.inverse, "sharpen": 0}, "windowing": {"wc": 1000, "ww": 4000}},
@@ -727,7 +724,7 @@ export default {
 
       // const obj = JSON.parse(json);
       const s = JSON.stringify(data);
-      console.log(s);
+      // console.log(s);
       axios({
         url: drf.patient.saveDrwingMarker('1.2.410.200062.2.1.20221013134141642.12.62098.726.713'),
         method: 'post',
@@ -762,31 +759,74 @@ export default {
       return {x: (coordiX - this.coorWidth) / this.rated, y: (coordiY - this.coorHeight) / this.rated};
     },
 
+    // 내가 그린 걸 저장하는 함수
     getRefImage2Overlayes() {
-      console.log(this.$refs.VueCanvasDrawing.images);
       this.$refs.VueCanvasDrawing.images.forEach(e => {
+        console.log(e);
+        const data = {};
+        let coordi;
+        const scene_pos = {};
+        const start = {}, end = {}
+        const value_box = {};
+        let dataType;
+        let newArr;
 
-        const newArr = e.coordinates.map(e => {
-          const coordi = this.getWeb2One(e.x, e.y);
-          return {x: coordi.x, y: coordi.y};
-        })
+        switch (e.type) {
+          case "dash":
+            newArr = e.coordinates.map(c => {
+              coordi = this.getWeb2One(c.x, c.y);
+              return {x: coordi.x, y: coordi.y};
+            })
+            scene_pos["control-points"] = newArr;
+            dataType = "freedraw";
+            break;
+          case "arrow":
+            coordi = this.getWeb2One(e.from.x, e.from.y);
+            start["x"] = coordi.x;
+            start["y"] = coordi.y;
+            coordi = this.getWeb2One(e.coordinates[0].x, e.coordinates[0].y);
+            end["x"] = coordi.x;
+            end["y"] = coordi.y;
+            scene_pos["start"] = start;
+            scene_pos["end"] = end;
+            dataType = "arrow";
+            break;
+          case "line":
+            coordi = this.getWeb2One(e.from.x, e.from.y);
+            start["x"] = coordi.x;
+            start["y"] = coordi.y;
+            coordi = this.getWeb2One(e.coordinates[0].x, e.coordinates[0].y);
+            end["x"] = coordi.x;
+            end["y"] = coordi.y;
+            scene_pos["start"] = start;
+            scene_pos["end"] = end;
+            value_box["x"] = (start["x"] + end["x"]) / 2;
+            value_box["y"] = (start["y"] + end["y"]) / 2;
+            dataType = "length";
+            break;
+          case "rectangle":
+            break;
+          case "angle":
+            break;
+          case "ellipse":
+            break;
+        }
+
 
         if (e.coordinates.length !== 0) {
-          this.overlayes.push({
-            // 1. scene_pos
-            "scene_pos": {
-              "control-points": newArr
-            },
-            // 2. style
-            "style": {
-              "brush": {"color": "#0000ff00"},
-              "pen": {"cap": 32, "color": 'ff' + e.color, "join": 128, "style": 1, "width": e.width}
-            },
-            // 3. transformation
-            "transformation": {"rot_deg": 0},
-            // 4. type
-            "type": "freedraw"
-          })
+          // 1. scene_pos
+          data["scene_pos"] = scene_pos;
+          // 2. style
+          data["style"] = {
+            "brush": {"color": "#00ffffff"},
+            "pen": {"cap": 32, "color": '#ff' + e.color.substring(1), "join": 128, "style": 1, "width": e.width}
+          };
+          // 3. transformation
+          data["transformation"] = {"rot_deg": 0};
+          // 4. type
+          data["type"] = dataType;
+          console.log(data);
+          this.overlayes.push(data);
         }
       })
     },
