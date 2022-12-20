@@ -625,11 +625,11 @@ export default {
      * rectangle  => square     1
      * ellipse    => circle     1
      * */
-    // One2에서 저장된 걸 불러오는 함수
+    // One2 --> Web
     importImageDrawing(d) {
       let canvas = document.querySelector('#VueDrawingCanvas');
       const context = this.context ? this.context : canvas.getContext('2d');
-      let coordi;
+      let coordi, coordi2;
       d.forEach(m => {
         console.log('importImageDrawing data');
         console.log(m);
@@ -680,12 +680,21 @@ export default {
             stroke.from.y = coordi.y;
             coordi = this.getOne2Web(m.scene_pos.end.x, m.scene_pos.end.y);
             stroke.coordinates.push({x: coordi.x, y: coordi.y, valueBox: m.scene_pos["value-box"]});
-            // value-box 체크 확인
             this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
             this.$refs.VueCanvasDrawing.images.push(stroke);
             break;
           case "rectangle":
             stroke.type = "square";
+            coordi = this.getOne2Web(m.scene_pos.left, m.scene_pos.top);
+            stroke.from.x = coordi.x;
+            stroke.from.y = coordi.y;
+            coordi2 = this.getOne2Web(m.scene_pos.right, m.scene_pos.bottom);
+            stroke.coordinates.push({x: coordi2.x, y: coordi.y},
+                                    {x: coordi2.x, y: coordi2.y},
+                                    {x: coordi.x, y: coordi2.y},
+                                    {x: coordi.x, y: coordi.y});
+            this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
+            this.$refs.VueCanvasDrawing.images.push(stroke);
             break;
           case "angle":
             stroke.type = "line";
@@ -697,7 +706,7 @@ export default {
       })
     },
 
-    // 내가 그린 걸 저장하는 함수
+    // (My) Web --> One2
     async save() {
       // sharpen, windowing 수정 필요
       await this.getRefImage2Overlayes();
@@ -759,13 +768,13 @@ export default {
       return {x: (coordiX - this.coorWidth) / this.rated, y: (coordiY - this.coorHeight) / this.rated};
     },
 
-    // 내가 그린 걸 저장하는 함수
+    // Web --> One2
     // p.s. 제가 안맞추고 싶은 게 아니라 당사 네이밍 컨벤션이 이렇습니다... -정태영 사원
     getRefImage2Overlayes() {
       this.$refs.VueCanvasDrawing.images.forEach(e => {
             console.log(e);
             const data = {"style": {}};
-            let coordi;
+            let coordi, coordi2;
             const scene_pos = {};
             const start = {}, end = {}
             const value_box = {};
@@ -812,7 +821,16 @@ export default {
                 };
                 dataType = "length";
                 break;
-              case "rectangle":
+              case "square":
+                // from:: 시작점
+                coordi = this.getWeb2One(e.coordinates[3].x, e.coordinates[3].y);
+                coordi2 = this.getWeb2One(e.coordinates[1].x, e.coordinates[1].y);
+                scene_pos["bottom"] = coordi2.y;
+                scene_pos["left"] = coordi.x;
+                scene_pos["right"] = coordi2.x;
+                scene_pos["top"] = coordi.y;
+                data["style"]["brush"] = {"color": "#00ffffff"};
+                dataType = "rectangle";
                 break;
               case "angle":
                 break;
