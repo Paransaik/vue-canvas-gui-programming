@@ -8,7 +8,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
       type: String,
       validator: value => {
         // 1
-        return ['dash', 'line', 'arrow', 'square', 'circle', 'triangle', 'half_triangle'].indexOf(value) !== -1;
+        return ['dash', 'line', 'arrow', 'tapeline', 'square', 'circle', 'triangle', 'half_triangle'].indexOf(value) !== -1;
       },
       default: () => 'dash'
     },
@@ -183,7 +183,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
       if (!this.loadedImage) {
         return new Promise(resolve => {
           if (!this.backgroundImage) {
-            resolve();나온단
+            resolve();
             return;
           }
           const image = new Image();
@@ -234,7 +234,8 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
           fill: this.eraser ||
                 this.strokeType === 'dash' ||
                 this.strokeType === 'line' ||
-                this.strokeType === 'arrow'
+                this.strokeType === 'arrow' ||
+                this.strokeType === 'tapeline'
                     ? false : this.fillShape,
           lineCap: this.lineCap,
           lineJoin: this.lineJoin
@@ -251,7 +252,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
 
         let coordinate = this.getCoordinates(event);
 
-        if (this.eraser || this.strokeType === 'dash') {
+        if (this.eraser || this.strokeType === 'dash' || this.strokeType === 'tapeline') {
           this.strokes.coordinates.push(coordinate);
           this.drawShape(this.context, this.strokes, false);
         } else {
@@ -475,7 +476,8 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
                 this.drawShape(baseCanvasContext, stroke, stroke.type === 'eraser' ||
                                                                     stroke.type === 'dash' ||
                                                                     stroke.type === 'line' ||
-                                                                    stroke.type === 'arrow'
+                                                                    stroke.type === 'arrow' ||
+                                                                    stroke.type === 'tapeline'
                                                                         ? false : true);
               }
             }
@@ -504,7 +506,10 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
           var testWidth = metrics.width;
 
           if (testWidth > maxWidth && n > 0) {
-            if (this.watermark && this.watermark.fontStyle && this.watermark.fontStyle.drawType && this.watermark.fontStyle.drawType === 'stroke') {
+            if (this.watermark
+                && this.watermark.fontStyle
+                && this.watermark.fontStyle.drawType
+                && this.watermark.fontStyle.drawType === 'stroke') {
               context.strokeText(line, x, y);
             } else {
               context.fillText(line, x, y);
@@ -517,7 +522,10 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
           }
         }
 
-        if (this.watermark && this.watermark.fontStyle && this.watermark.fontStyle.drawType && this.watermark.fontStyle.drawType === 'stroke') {
+        if (this.watermark
+            && this.watermark.fontStyle
+            && this.watermark.fontStyle.drawType
+            && this.watermark.fontStyle.drawType === 'stroke') {
           context.strokeText(line, x, y);
         } else {
           context.fillText(line, x, y);
