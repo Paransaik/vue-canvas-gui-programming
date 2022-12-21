@@ -8,7 +8,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
       type: String,
       validator: value => {
         // 1
-        return ['dash', 'line', 'arrow', 'tapeline', 'square', 'circle', 'triangle', 'half_triangle'].indexOf(value) !== -1;
+        return ['dash', 'line', 'arrow', 'tapeline', 'angle', 'square', 'circle', 'triangle', 'half_triangle'].indexOf(value) !== -1;
       },
       default: () => 'dash'
     },
@@ -234,8 +234,9 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
           fill: this.eraser ||
                 this.strokeType === 'dash' ||
                 this.strokeType === 'line' ||
-                this.strokeType === 'arrow' ||
-                this.strokeType === 'tapeline'
+                this.strokeType === 'tapeline' ||
+                this.strokeType === 'angle' ||
+                this.strokeType === 'arrow'
                     ? false : this.fillShape,
           lineCap: this.lineCap,
           lineJoin: this.lineJoin
@@ -252,7 +253,10 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
 
         let coordinate = this.getCoordinates(event);
 
-        if (this.eraser || this.strokeType === 'dash' || this.strokeType === 'tapeline') {
+        if (this.eraser ||
+            this.strokeType === 'dash' ||
+            this.strokeType === 'tapeline' ||
+            this.strokeType === 'angle') {
           this.strokes.coordinates.push(coordinate);
           this.drawShape(this.context, this.strokes, false);
         } else {
@@ -369,6 +373,14 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
 
       if (strokes.type === 'circle') {
         context.ellipse(strokes.coordinates[0].x, strokes.coordinates[0].y, strokes.coordinates[1].x, strokes.coordinates[1].y, 0, 0, Math.PI * 2);
+      } else if (strokes.type === 'angle'){
+        context.moveTo(strokes.from.x, strokes.from.y);
+        context.lineTo(strokes.coordinates[0].x, strokes.coordinates[0].y);
+        context.moveTo(strokes.from.x, strokes.from.y);
+        context.lineTo(strokes.coordinates[1].x, strokes.coordinates[1].y);
+        if (closingPath) {
+          context.closePath();
+        }
       } else {
         context.moveTo(strokes.from.x, strokes.from.y);
         strokes.coordinates.forEach(stroke => {
@@ -476,9 +488,9 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
                 this.drawShape(baseCanvasContext, stroke, stroke.type === 'eraser' ||
                                                                     stroke.type === 'dash' ||
                                                                     stroke.type === 'line' ||
-                                                                    stroke.type === 'arrow' ||
-                                                                    stroke.type === 'tapeline'
-                                                                        ? false : true);
+                                                                    stroke.type === 'tapeline' ||
+                                                                    stroke.type === 'angle' ||
+                                                                    stroke.type === 'arrow' ? false : true);
               }
             }
           });
