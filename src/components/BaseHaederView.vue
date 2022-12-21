@@ -511,12 +511,31 @@ export default {
         this.getCoordinate(e);
         this.endX = this.x;
         this.endY = this.y;
-        const rate = this.pW / this.fullHeight;
-        // const pixelSpacing = 0.10000000149011612;
-        const pixelSpacing = this.pS;
-        const distance = Math.pow(Math.pow(this.startY - this.endY, 2) + Math.pow(this.startX - this.endX, 2), 0.5) * rate * pixelSpacing;
-        console.log(distance);
+        this.getDistance([this.getWeb2One({x: this.startX, y: this.startY}),
+          this.getWeb2One({x: this.endX, y: this.endY})]);
       }
+    },
+    getDistance(arr) {
+      // const rate = this.pW / this.fullHeight;
+      // const pixelSpacing = 0.10000000149011612;
+      const pixelSpacing = this.pS;
+      let distance = 0;
+      let x = arr[0].x;
+      let y = arr[0].y;
+      arr.forEach(a => {
+        distance += Math.pow(Math.pow(y - a.y, 2) + Math.pow(x - a.x, 2), 0.5) * pixelSpacing * 10;
+        x = a.x;
+        y = a.y;
+      });
+      // Number.EPSILON = 오차없이 나타낼수 있는 가장 작은 양의 수, 부동 소수점 오차를 보정
+      distance = Math.round((distance + Number.EPSILON) * 100) / 100;
+      return distance + ' mm';
+    },
+    getAngle(x1, y1, x2, y2) {
+      let rad = Math.atan2(y2 - y1, x2 - x1);
+      // console.log(y2 - y1);
+      // console.log(x2 - x1);
+      return (rad * 180) / Math.PI;
     },
 
     // 2-1, 2-3
@@ -630,7 +649,9 @@ export default {
       let canvas = document.querySelector('#VueDrawingCanvas');
       const context = this.context ? this.context : canvas.getContext('2d');
       let coordi, coordi2;
-      d.forEach(m => {
+      let distance;
+      let angle;
+      d.forEach(async m => {
         console.log('importImageDrawing data');
         console.log(m);
         this.lineColor = '#' + m.style.pen.color.substring(3, 9);
@@ -649,6 +670,7 @@ export default {
           lineJoin: "round",
         };
 
+        console.log(m.type);
         switch (m.type) {
           case "freedraw":
             stroke.type = "dash";
@@ -671,7 +693,6 @@ export default {
             stroke.coordinates.push({x: coordi.x, y: coordi.y});
             this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
             this.$refs.VueCanvasDrawing.images.push(stroke);
-            console.log(this.$refs.VueCanvasDrawing.images);
             break;
           case "length":
             stroke.type = "line";
@@ -680,6 +701,40 @@ export default {
             stroke.from.y = coordi.y;
             coordi = this.getOne2Web(m.scene_pos.end.x, m.scene_pos.end.y);
             stroke.coordinates.push({x: coordi.x, y: coordi.y, valueBox: m.scene_pos["value-box"]});
+            coordi = this.getOne2Web(m.scene_pos["value-box"].x, m.scene_pos["value-box"].y);
+            distance = this.getDistance([{x: m.scene_pos.start.x, y: m.scene_pos.start.y},
+              {x: m.scene_pos.end.x, y: m.scene_pos.end.y}]);
+            // 단위 표시하기
+            context.font = "15px serif"
+            context.textAlign = "start"
+            context.textBaseline = "alphabetic";
+            context.fillStyle = "#ffff00";
+            context.fillText(distance, coordi.x, coordi.y);
+            this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
+            this.$refs.VueCanvasDrawing.images.push(stroke);
+            // 선과 단위 잇기, 구현 중
+            break;
+          case "multi-length":
+            stroke.type = "tapeline";
+            coordi = this.getOne2Web(m.scene_pos['control-points'][0].x,
+                m.scene_pos['control-points'][0].y);
+            stroke.from.x = coordi.x;
+            stroke.from.y = coordi.y;
+            m.scene_pos['control-points'].forEach(p => {
+              coordi = this.getOne2Web(p.x, p.y);
+              stroke.coordinates.push({x: coordi.x, y: coordi.y});
+            })
+
+            console.log(m.scene_pos["value-box"]);
+            coordi = this.getOne2Web(m.scene_pos["value-box"].x,
+                m.scene_pos["value-box"].y);
+            distance = this.getDistance(m.scene_pos['control-points']);
+            // 단위 표시하기
+            context.font = "15px serif"
+            context.textAlign = "start"
+            context.textBaseline = "alphabetic";
+            context.fillStyle = "#ffff00";
+            context.fillText(distance, coordi.x, coordi.y);
             this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
             this.$refs.VueCanvasDrawing.images.push(stroke);
             break;
@@ -690,14 +745,35 @@ export default {
             stroke.from.y = coordi.y;
             coordi2 = this.getOne2Web(m.scene_pos.right, m.scene_pos.bottom);
             stroke.coordinates.push({x: coordi2.x, y: coordi.y},
-                                    {x: coordi2.x, y: coordi2.y},
-                                    {x: coordi.x, y: coordi2.y},
-                                    {x: coordi.x, y: coordi.y});
+                {x: coordi2.x, y: coordi2.y},
+                {x: coordi.x, y: coordi2.y},
+                {x: coordi.x, y: coordi.y});
             this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
             this.$refs.VueCanvasDrawing.images.push(stroke);
             break;
           case "angle":
-            stroke.type = "line";
+            stroke.type = "angle";
+            console.log(angle);
+            coordi = this.getOne2Web(m.scene_pos.side1.x, m.scene_pos.side1.y);
+            stroke.coordinates.push({x: coordi.x, y: coordi.y});
+            coordi = this.getOne2Web(m.scene_pos.side2.x, m.scene_pos.side2.y);
+            stroke.coordinates.push({x: coordi.x, y: coordi.y});
+            angle = 360 + this.getAngle(m.scene_pos.vertex.x, m.scene_pos.vertex.y,
+                    m.scene_pos.side1.x, m.scene_pos.side1.y) -
+                this.getAngle(m.scene_pos.vertex.x, m.scene_pos.vertex.y,
+                    m.scene_pos.side2.x, m.scene_pos.side2.y);
+            coordi = this.getOne2Web(m.scene_pos.vertex.x, m.scene_pos.vertex.y);
+            stroke.from.x = coordi.x;
+            stroke.from.y = coordi.y;
+            angle = Math.round((angle + Number.EPSILON) * 100) / 100 + ' º';
+            coordi = this.getOne2Web(m.scene_pos["value-box"].x, m.scene_pos["value-box"].y);
+            context.font = "15px serif"
+            context.textAlign = "start"
+            context.textBaseline = "alphabetic";
+            context.fillStyle = "#ffff00";
+            context.fillText(angle, coordi.x, coordi.y);
+            this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
+            this.$refs.VueCanvasDrawing.images.push(stroke);
             break;
           case "ellipse":
             stroke.type = "circle";
