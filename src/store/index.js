@@ -43,6 +43,8 @@ export default createStore({
         method: 'get'
       })
       .then(res => {
+        // console.log(res.data.Result.Entities);
+        // (4) [{…}, {…}, {…}, {…}]
         commit(Constant.SET_ALLPATIENTLIST, res.data.Result.Entities)
       })
       .catch(err => console.error(err))
@@ -56,6 +58,9 @@ export default createStore({
       })
       .then(res => {
         // res.data.Result.SeriesList.Entities = instanceUid list
+        // console.log(res.data.Result.SeriesList.Entities);
+        // {entity: Array(1), chartId: '20221013002'}
+        // 1.2.410.200062.2.1.20221222144825737.86.125615.843.799
         const datas = {
           entity: res.data.Result.SeriesList.Entities,
           chartId: uid.target.value
@@ -75,7 +80,7 @@ export default createStore({
         method: 'get'
       })
       .then(res => {
-        // console.log(res.data.Result.Entities);
+        console.log(res.data.Result.Entities);
         commit(Constant.SET_PATIENTRECORDLIST, res.data.Result.Entities)
       })
       .catch(err => console.error(err))
@@ -87,6 +92,7 @@ export default createStore({
         method: 'get'
       })
       .then(res => {
+        console.log(res.data.patientRecordFilenameList)
         commit(Constant.SET_PATIENTRECORDFILENAMELIST, res.data.patientRecordFilenameList)
       })
       .catch(err => console.error(err))

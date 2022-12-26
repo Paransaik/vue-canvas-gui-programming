@@ -161,6 +161,7 @@
                  v-for="(node, i) in imageArr"
                  :key="i">
               <img class="imgs" :src="node.images" style="pointer-events: none;" alt=""/>
+
               <div v-if="first.info" class="info">
                 데이터 전처리 필요 <br>
                 Chart Id:: {{ dataInfo.chartId }} <br>
@@ -195,6 +196,7 @@ export default {
   props: {},
 
   data: () => ({
+    // disable: true,
     disable: false,
     rated: 0,
 
@@ -203,6 +205,9 @@ export default {
     // Canvas
     canvasFullWidth: 0,
     canvasFullHeight: 0,
+    pictureHeightSize: 0,
+    pictureWidthSize: 0,
+    bindingWidthImg: 160,
     // 0, 0 coordinate set
     coorWidth: 0,
     coorHeight: 0,
@@ -370,7 +375,10 @@ export default {
           const json = xmlToJson(XmlNode);
           pw = json.tags.tags[0].tag[0]["@attributes"].value;
           ph = json.tags.tags[0].tag[1]["@attributes"].value;
+          console.log(pw, ph);
           yRate = this.fullHeight / (ph * e.PixelSpacingH);
+          this.pictureHeightSize = this.fullHeight;
+          this.pictureWidthSize = (pw / ph * this.fullHeight);
           const h = e.PixelSpacingH;
           const v = e.PixelSpacingV;
 
@@ -476,13 +484,15 @@ export default {
 
     // 1-3
     async showInfo(node, e) {
+      // debug용
       this.disable = true;
 
       if (this.preImage !== '') {
         this.preImage.setAttribute('style', '');
       }
-
+      this.bindingWidthImg = 156;
       this.mainImg = node.images;
+      // this.mainImg = 'https://png.pngtree.com/background/20210714/original/pngtree-pure-black-dark-background-wallpaper-picture-image_1218983.jpg';
       e.target.setAttribute('style', 'border: 2px solid blue');
       this.preImage = e.target;
 
@@ -529,14 +539,23 @@ export default {
       });
       // Number.EPSILON = 오차없이 나타낼수 있는 가장 작은 양의 수, 부동 소수점 오차를 보정
       distance = Math.round((distance + Number.EPSILON) * 100) / 100;
-      return distance + ' mm';
+      return distance.toFixed(2) + ' mm';
     },
     getAngle(x1, y1, x2, y2) {
       let rad = Math.atan2(y2 - y1, x2 - x1);
-      // console.log(y2 - y1);
-      // console.log(x2 - x1);
+      console.log(x1, y1, x2, y2);
+      console.log(x2 - x1);
+      console.log(y2 - y1);
+      console.log('angle' + (rad * 180) / Math.PI);
       return (rad * 180) / Math.PI;
     },
+
+    /* angle = this.getAngle(m.scene_pos.vertex.x, m.scene_pos.vertex.y,
+        m.scene_pos.side2.x, m.scene_pos.side2.y) -
+    this.getAngle(m.scene_pos.vertex.x, m.scene_pos.vertex.y,
+        m.scene_pos.side1.x, m.scene_pos.side1.y);
+    if (angle > 180) angle = 360 - angle;
+    else if (angle < 0) angle *= -1;*/
 
     // 2-1, 2-3
     changedMouseEvent(e) {
@@ -592,7 +611,9 @@ export default {
     // 2-4, 2-8, 2-9, 3-1
     changedStrokeType(s) {
       if (this.disable) {
-        if (s === 'ruler') {
+        if (s === 'zoom' || s === 'info') {
+          this.lock = false;
+        } else if (s === 'ruler') {
           this.strokeType = 'line';
           this.lock = !this.second.ruler;
         } else if (s === 'arrow') {
@@ -607,8 +628,6 @@ export default {
         } else if (s === 'draw') {
           this.strokeType = 'dash';
           this.lock = this.third.draw;
-        } else if (s === 'zoom' || s === 'info') {
-          this.lock = false;
         } else {
           this.lock = true;
         }
@@ -684,16 +703,6 @@ export default {
             this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
             this.$refs.VueCanvasDrawing.images.push(stroke);
             break;
-          case "arrow":
-            stroke.type = "arrow";
-            coordi = this.getOne2Web(m.scene_pos.start.x, m.scene_pos.start.y);
-            stroke.from.x = coordi.x;
-            stroke.from.y = coordi.y;
-            coordi = this.getOne2Web(m.scene_pos.end.x, m.scene_pos.end.y);
-            stroke.coordinates.push({x: coordi.x, y: coordi.y});
-            this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
-            this.$refs.VueCanvasDrawing.images.push(stroke);
-            break;
           case "length":
             stroke.type = "line";
             coordi = this.getOne2Web(m.scene_pos.start.x, m.scene_pos.start.y);
@@ -738,6 +747,42 @@ export default {
             this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
             this.$refs.VueCanvasDrawing.images.push(stroke);
             break;
+          case "angle":
+            stroke.type = "angle";
+            coordi = this.getOne2Web(m.scene_pos.side1.x, m.scene_pos.side1.y);
+            stroke.coordinates.push({x: coordi.x, y: coordi.y});
+            coordi = this.getOne2Web(m.scene_pos.side2.x, m.scene_pos.side2.y);
+            stroke.coordinates.push({x: coordi.x, y: coordi.y});
+            angle = this.getAngle(m.scene_pos.vertex.x, m.scene_pos.vertex.y,
+                    m.scene_pos.side2.x, m.scene_pos.side2.y) -
+                this.getAngle(m.scene_pos.vertex.x, m.scene_pos.vertex.y,
+                    m.scene_pos.side1.x, m.scene_pos.side1.y);
+            if (angle > 180) angle = 360 - angle;
+            else if (angle < 0) angle *= -1;
+            coordi = this.getOne2Web(m.scene_pos.vertex.x, m.scene_pos.vertex.y);
+            stroke.from.x = coordi.x;
+            stroke.from.y = coordi.y;
+            angle = (Math.round((angle + Number.EPSILON) * 100) / 100).toFixed(2) + ' °';
+
+            coordi = this.getOne2Web(m.scene_pos["value-box"].x, m.scene_pos["value-box"].y);
+            context.font = "15px serif"
+            context.textAlign = "start"
+            context.textBaseline = "alphabetic";
+            context.fillStyle = "#ffff00";
+            context.fillText(angle, coordi.x, coordi.y);
+            this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
+            this.$refs.VueCanvasDrawing.images.push(stroke);
+            break;
+          case "arrow":
+            stroke.type = "arrow";
+            coordi = this.getOne2Web(m.scene_pos.start.x, m.scene_pos.start.y);
+            stroke.from.x = coordi.x;
+            stroke.from.y = coordi.y;
+            coordi = this.getOne2Web(m.scene_pos.end.x, m.scene_pos.end.y);
+            stroke.coordinates.push({x: coordi.x, y: coordi.y});
+            this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
+            this.$refs.VueCanvasDrawing.images.push(stroke);
+            break;
           case "rectangle":
             stroke.type = "square";
             coordi = this.getOne2Web(m.scene_pos.left, m.scene_pos.top);
@@ -751,32 +796,9 @@ export default {
             this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
             this.$refs.VueCanvasDrawing.images.push(stroke);
             break;
-          case "angle":
-            stroke.type = "angle";
-            console.log(angle);
-            coordi = this.getOne2Web(m.scene_pos.side1.x, m.scene_pos.side1.y);
-            stroke.coordinates.push({x: coordi.x, y: coordi.y});
-            coordi = this.getOne2Web(m.scene_pos.side2.x, m.scene_pos.side2.y);
-            stroke.coordinates.push({x: coordi.x, y: coordi.y});
-            angle = 360 + this.getAngle(m.scene_pos.vertex.x, m.scene_pos.vertex.y,
-                    m.scene_pos.side1.x, m.scene_pos.side1.y) -
-                this.getAngle(m.scene_pos.vertex.x, m.scene_pos.vertex.y,
-                    m.scene_pos.side2.x, m.scene_pos.side2.y);
-            coordi = this.getOne2Web(m.scene_pos.vertex.x, m.scene_pos.vertex.y);
-            stroke.from.x = coordi.x;
-            stroke.from.y = coordi.y;
-            angle = Math.round((angle + Number.EPSILON) * 100) / 100 + ' º';
-            coordi = this.getOne2Web(m.scene_pos["value-box"].x, m.scene_pos["value-box"].y);
-            context.font = "15px serif"
-            context.textAlign = "start"
-            context.textBaseline = "alphabetic";
-            context.fillStyle = "#ffff00";
-            context.fillText(angle, coordi.x, coordi.y);
-            this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
-            this.$refs.VueCanvasDrawing.images.push(stroke);
-            break;
           case "ellipse":
             stroke.type = "circle";
+
             break;
         }
       })
@@ -811,7 +833,8 @@ export default {
       const s = JSON.stringify(data);
       // console.log(s);
       axios({
-        url: drf.patient.saveDrwingMarker('1.2.410.200062.2.1.20221013134141642.12.62098.726.713'),
+        // url: drf.patient.saveDrwingMarker('1.2.410.200062.2.1.20221013134141642.12.62098.726.713'),
+        url: drf.patient.saveDrwingMarker('1.2.410.200062.2.1.20221222144825737.86.125615.843.799'),
         method: 'post',
         data: s
       })
@@ -866,18 +889,6 @@ export default {
                 data["style"]["brush"] = {"color": "#00ffffff"};
                 dataType = "freedraw";
                 break;
-              case "arrow":
-                coordi = this.getWeb2One(e.from.x, e.from.y);
-                start["x"] = coordi.x;
-                start["y"] = coordi.y;
-                coordi = this.getWeb2One(e.coordinates[0].x, e.coordinates[0].y);
-                end["x"] = coordi.x;
-                end["y"] = coordi.y;
-                scene_pos["start"] = start;
-                scene_pos["end"] = end;
-                data["style"]["brush"] = {"color": "#00ffffff"};
-                dataType = "arrow";
-                break;
               case "line":
                 coordi = this.getWeb2One(e.from.x, e.from.y);
                 start["x"] = coordi.x;
@@ -897,6 +908,24 @@ export default {
                 };
                 dataType = "length";
                 break;
+              case "tapeline":
+                break;
+              case "angle":
+                break;
+              case "arrow":
+                coordi = this.getWeb2One(e.from.x, e.from.y);
+                start["x"] = coordi.x;
+                start["y"] = coordi.y;
+                coordi = this.getWeb2One(e.coordinates[0].x, e.coordinates[0].y);
+                end["x"] = coordi.x;
+                end["y"] = coordi.y;
+                scene_pos["start"] = start;
+                scene_pos["end"] = end;
+                data["style"]["brush"] = {"color": "#00ffffff"};
+                dataType = "arrow";
+                break;
+              case "ellipse":
+                break;
               case "square":
                 // from:: 시작점
                 coordi = this.getWeb2One(e.coordinates[3].x, e.coordinates[3].y);
@@ -908,12 +937,7 @@ export default {
                 data["style"]["brush"] = {"color": "#00ffffff"};
                 dataType = "rectangle";
                 break;
-              case "angle":
-                break;
-              case "ellipse":
-                break;
             }
-
 
             if (e.coordinates.length !== 0) {
               // 1. scene_pos
@@ -994,12 +1018,12 @@ export default {
 
 .mainImg {
   height: calc(1px * v-bind(fullHeight));
-  width: calc(1px * v-bind(fullHeight));
+  width: calc(1px * v-bind(pictureWidthSize));
   position: absolute;
   top: calc(1px * v-bind(movingTop));
-  left: calc(1px * (((v-bind(fullWidth) - v-bind(fullHeight)) / 2) + v-bind(movingLeft)));
-}
+  left: calc(1px * (((v-bind(fullWidth) - v-bind(pictureWidthSize)) / 2) + v-bind(movingLeft)));
 
+}
 
 .thumbnail {
   display: flex;
@@ -1073,16 +1097,17 @@ export default {
 .imgBox {
   display: flex;
   width: 160px;
+  height: 90px;
   margin: 0 0 0 8px;
-  border: solid 1px #d5dae5;
-  background-color: #eaecf2;
-  flex: 0 0 auto;
+  /*border: solid 1px #d5dae5;*/
+  background: black;
+  align-items: center;
+  justify-content: center;
 }
 
 .imgs {
-  margin: 0 auto;
-  width: 90px;
-  height: 89px;
+  /*height: 86px;*/
+  width: calc(1px * v-bind(bindingWidthImg));
 }
 
 /* HS */
