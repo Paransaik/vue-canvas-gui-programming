@@ -482,9 +482,7 @@ export default {
 
     // 1-3
     async showInfo(node, e) {
-      // debug용
       this.disable = true;
-
       if (this.preImage !== '') {
         this.preImage.setAttribute('style', '');
       }

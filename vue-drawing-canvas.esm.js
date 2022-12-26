@@ -321,23 +321,24 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
               break;
 
             case 'circle':
-              let radiusX = this.strokes.from.x - coordinate.x < 0 ?
-                  (this.strokes.from.x - coordinate.x) * -1 : this.strokes.from.x - coordinate.x;
+              /*let radiusX = (this.strokes.from.x - coordinate.x < 0 ?
+                  (this.strokes.from.x - coordinate.x) * -1 : this.strokes.from.x - coordinate.x);
               this.guides = [{
                 x: this.strokes.from.x > coordinate.x ? this.strokes.from.x - radiusX : this.strokes.from.x + radiusX,
                 y: this.strokes.from.y
               }, {
                 x: radiusX,
                 y: radiusX
+              }];*/
+              let radiusX = (this.strokes.from.x - coordinate.x) / -2;
+              let radiusY = (this.strokes.from.y - coordinate.y) / -2;
+              this.guides = [{
+                x: this.strokes.from.x + radiusX,
+                y: this.strokes.from.y + radiusY
+              }, {
+                x: Math.abs(radiusX),
+                y: Math.abs(radiusY)
               }];
-
-              // this.guides = [{
-              //   x: this.strokes.from.x,
-              //   y: this.strokes.from.y
-              // }, {
-              //   x: coordinate.x,
-              //   y: coordinate.y
-              // }];
 
               break;
           }
