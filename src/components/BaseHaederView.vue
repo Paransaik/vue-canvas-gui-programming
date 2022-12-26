@@ -122,7 +122,7 @@
             :color=lineColor
             :lineWidth=lineWidth
             @mousedown="downFlag = !downFlag, startCoordinate($event)"
-            @mousemove="changedMouseEvent($event)"
+            @mousemove="changedMouseEvent($event), getCoordinate($event)"
             @mouseup="downFlag = !downFlag, endCoordinate($event)"
             @wheel="changedScale"
             saveAs="png"
@@ -152,8 +152,7 @@
           </div>
         </div>
         <div id="thumbnailList" class="thumbnailList" :class="{ ListCng:btnchg }">
-          <div class="thumbnailBtn" @click="btnchg = !btnchg"> {{ btnchg ? "▲" : "▼" }} Thumbnail {{ x }}
-            {{ y }} {{ scale }}
+          <div class="thumbnailBtn" @click="btnchg = !btnchg"> {{ btnchg ? "▲" : "▼" }} Thumbnail {{ x }} {{ y }}
           </div>
           <div id="thumbnails" class="thumbnails" :class="{ thumbnailsCng:btnchg }">
             <div id="imgBox" class="imgBox"
@@ -375,7 +374,6 @@ export default {
           const json = xmlToJson(XmlNode);
           pw = json.tags.tags[0].tag[0]["@attributes"].value;
           ph = json.tags.tags[0].tag[1]["@attributes"].value;
-          console.log(pw, ph);
           yRate = this.fullHeight / (ph * e.PixelSpacingH);
           this.pictureHeightSize = this.fullHeight;
           this.pictureWidthSize = (pw / ph * this.fullHeight);
@@ -667,7 +665,7 @@ export default {
     importImageDrawing(d) {
       let canvas = document.querySelector('#VueDrawingCanvas');
       const context = this.context ? this.context : canvas.getContext('2d');
-      let coordi, coordi2;
+      let coordi, coordi2, radiusX, radiusY;
       let distance;
       let angle;
       d.forEach(async m => {
@@ -725,18 +723,14 @@ export default {
             break;
           case "multi-length":
             stroke.type = "tapeline";
-            coordi = this.getOne2Web(m.scene_pos['control-points'][0].x,
-                m.scene_pos['control-points'][0].y);
+            coordi = this.getOne2Web(m.scene_pos['control-points'][0].x, m.scene_pos['control-points'][0].y);
             stroke.from.x = coordi.x;
             stroke.from.y = coordi.y;
             m.scene_pos['control-points'].forEach(p => {
               coordi = this.getOne2Web(p.x, p.y);
               stroke.coordinates.push({x: coordi.x, y: coordi.y});
             })
-
-            console.log(m.scene_pos["value-box"]);
-            coordi = this.getOne2Web(m.scene_pos["value-box"].x,
-                m.scene_pos["value-box"].y);
+            coordi = this.getOne2Web(m.scene_pos["value-box"].x, m.scene_pos["value-box"].y);
             distance = this.getDistance(m.scene_pos['control-points']);
             // 단위 표시하기
             context.font = "15px serif"
@@ -762,8 +756,8 @@ export default {
             coordi = this.getOne2Web(m.scene_pos.vertex.x, m.scene_pos.vertex.y);
             stroke.from.x = coordi.x;
             stroke.from.y = coordi.y;
+            // 단위 표시하기
             angle = (Math.round((angle + Number.EPSILON) * 100) / 100).toFixed(2) + ' °';
-
             coordi = this.getOne2Web(m.scene_pos["value-box"].x, m.scene_pos["value-box"].y);
             context.font = "15px serif"
             context.textAlign = "start"
@@ -785,6 +779,7 @@ export default {
             break;
           case "rectangle":
             stroke.type = "square";
+            stroke.type = "square";
             coordi = this.getOne2Web(m.scene_pos.left, m.scene_pos.top);
             stroke.from.x = coordi.x;
             stroke.from.y = coordi.y;
@@ -798,7 +793,15 @@ export default {
             break;
           case "ellipse":
             stroke.type = "circle";
-
+            coordi = this.getOne2Web(m.scene_pos.left, m.scene_pos.top);
+            stroke.from.x = coordi.x;
+            stroke.from.y = coordi.y;
+            coordi2 = this.getOne2Web(m.scene_pos.right, m.scene_pos.bottom);
+            radiusX = Math.abs(coordi.x - coordi2.x) / 2;
+            radiusY = Math.abs(coordi.y - coordi2.y) / 2;
+            stroke.coordinates.push({x: coordi.x + radiusX, y: coordi.y + radiusY}, {x: radiusX, y: radiusY});
+            this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
+            this.$refs.VueCanvasDrawing.images.push(stroke);
             break;
         }
       })
