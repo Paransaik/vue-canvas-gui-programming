@@ -546,13 +546,6 @@ export default {
       return (rad * 180) / Math.PI;
     },
 
-    /* angle = this.getAngle(m.scene_pos.vertex.x, m.scene_pos.vertex.y,
-        m.scene_pos.side2.x, m.scene_pos.side2.y) -
-    this.getAngle(m.scene_pos.vertex.x, m.scene_pos.vertex.y,
-        m.scene_pos.side1.x, m.scene_pos.side1.y);
-    if (angle > 180) angle = 360 - angle;
-    else if (angle < 0) angle *= -1;*/
-
     // 2-1, 2-3
     changedMouseEvent(e) {
       if (this.downFlag && this.second.bright) {
@@ -651,13 +644,14 @@ export default {
     },
 
     /***
-     * One2       => Canvas,  pen.style
-     * freedraw   => dash       1
-     * arrow      => line       1
-     * length     => line       0
-     * angle      => line       0
-     * rectangle  => square     1
-     * ellipse    => circle     1
+     * One2         => Canvas  pen.style
+     * length       => line       0
+     * multi-length => tapeline
+     * angle        => line       0
+     * arrow        => line       1
+     * ellipse      => circle     1
+     * rectangle    => square     1
+     * freedraw     => dash       1
      * */
     // One2 --> Web
     importImageDrawing(d) {
@@ -868,6 +862,16 @@ export default {
       return {x: (coordiX - this.coorWidth) / this.rated, y: (coordiY - this.coorHeight) / this.rated};
     },
 
+    /***
+     * Canvas     => One2         pen.style
+     * line       => length         0
+     * tapeline   => multi-length
+     * angle      => angle          0
+     * arrow      => arrow          1
+     * ellipse    => circle         1
+     * rectangle  => square         1
+     * dash       => freedraw       1
+     * */
     // Web --> One2
     // p.s. 제가 안맞추고 싶은 게 아니라 당사 네이밍 컨벤션이 이렇습니다... -정태영 사원
     getRefImage2Overlayes() {
@@ -925,10 +929,18 @@ export default {
                 data["style"]["brush"] = {"color": "#00ffffff"};
                 dataType = "arrow";
                 break;
-              case "ellipse":
+              case "circle":
+                coordi = this.getWeb2One(e.coordinates[0].x - e.coordinates[1].x, e.coordinates[0].y - e.coordinates[1].y);
+                coordi2 = this.getWeb2One(e.coordinates[0].x + e.coordinates[1].x, e.coordinates[0].y + e.coordinates[1].y);
+                scene_pos["bottom"] = coordi2.y;
+                scene_pos["left"] = coordi.x;
+                scene_pos["right"] = coordi2.x;
+                scene_pos["top"] = coordi.y;
+                data["style"]["brush"] = {"color": "#00ffffff"};
+                dataType = "ellipse";
                 break;
               case "square":
-                // from:: 시작점
+                // from:: 시작점, left - top
                 coordi = this.getWeb2One(e.coordinates[3].x, e.coordinates[3].y);
                 coordi2 = this.getWeb2One(e.coordinates[1].x, e.coordinates[1].y);
                 scene_pos["bottom"] = coordi2.y;
