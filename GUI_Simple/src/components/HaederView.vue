@@ -2,9 +2,7 @@
   <div class="headerView">
     <section class="section">
       <div class="searchBar">
-
-        <!-- ================================ -->
-        <input 
+        <input
           list="patientUid"
           type="text" 
           class="searchInput" 
@@ -23,23 +21,6 @@
         </datalist>
         <!-- ================================ -->
       </div>
-
-      <!-- <div class="autocomplete">
-        <input type="text" @change="onChange" v-model="search"  @click="showAll" />
-        <ul id="autocomplete-results" v-show="isOpen" ref="scrollContainer" class="autocomplete-results">
-          <li class="loading" v-if="isLoading">
-            Loading results...
-          </li>
-          <li ref="options" v-else v-for="(result, i) in allPatientList" :key="i" @click="setResult(result, i)" class="autocomplete-result" :class="{ 'is-active': i === arrowCounter }">
-            {{ result }}
-          </li>
-        </ul>
-      </div> -->
-
-      <!-- <div v-for="aPL in allPatientList" :key="aPL" :vlaue="aPL">
-        <button v-text="`${aPL.LastName} ${aPL.MiddleName} ${aPL.FirstName}`" @click="getPatientPictureList(aPL.UniqueID)"></button>
-      </div> -->
-
       <div class="haeaderStatusBar">
         <div>영상 보기</div>
         <div>ㅡ</div>
@@ -56,11 +37,6 @@ export default {
   name: 'HeaderView',
 
   data: () => ({
-    // isOpen: false,
-    // results: [],
-    // search: "",
-    // isLoading: false,
-    // arrowCounter: 0
   }),
 
   components: {
@@ -77,24 +53,12 @@ export default {
   },
 
   watch: {
-    // allPatientList: function(val, oldValue) {
-    //   // actually compare them
-    //   if (val.length !== oldValue.length) {
-    //     this.results = val;
-    //     this.isLoading = false;
-    //   }
-    // }
   },
 
 
   created() {
-    // 2266554ADD1E4D63A4976C149834D14C
-    console.log("Patient Created Comp.");
     this.getAllPatientList();
     this.processAPL();
-    console.log("Call By PatientNameList");
-    // this.getPatientNumList();
-    // this.getPatientPictureList('2266554ADD1E4D63A4976C149834D14C');
   },
 
   methods: {
@@ -105,49 +69,7 @@ export default {
       Constant.GET_PATIENTRECORDLIST,
       Constant.GET_PATIENTRECORDFILENAMELIST,
     ]),
-
-
-    processAPL() {
-      // var response = "Aleppo Alexandria Alger Almaty"
-      // var city = response.split(" ");
-      // var options = "";
-
-      // for(var i = 0; i < 4; i++) {
-      //     options += "<option value='" + city[i]+ "'>\n";
-      // }
-      // console.log(options);
-      // console.log(document.getElementById("patientUid"));
-      // document.getElementById("patientUid").innerHTML = options;
-    }
-
-
-    // onChange() {
-    //   console.log( this.search)
-    //   // Let's warn the parent that a change was made
-    //   this.$emit("input", this.search);
-    // },
-
-    // setResult(result, i) {
-    //   this.arrowCounter = i;
-    //   this.search = result;
-    //   this.isOpen = false;
-    //   // Fire onChange, because it won't do it on blur
-    //   this.onChange();
-    // },
-
-    // showAll() {
-    //   this.isOpen = !this.isOpen;
-		// 	(this.isOpen) ? this.results = this.items : this.results = [];
-    // },
-  },
-
-  // mounted() {
-  //   document.addEventListener("click", this.handleClickOutside);
-  // },
-
-  // destroyed() {
-  //   document.removeEventListener("click", this.handleClickOutside);
-  // },
+  }
 }
 </script>
 

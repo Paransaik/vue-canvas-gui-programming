@@ -1,7 +1,6 @@
 <template>
   <div class="baseHeaderView">
     <div class="utilityView">
-      <!-- 1 -->
       <div class="itemBox">
         <div
             class="item"
@@ -14,7 +13,6 @@
       </div>
       <div class="line"></div>
 
-      <!-- 2 -->
       <div class="itemBox">
         <div
             class="item"
@@ -22,12 +20,10 @@
             @click="checkedToggling(second, k, v), changedStrokeType(k), changedEvent(k)"
             :class="{isToggle:v && disable}">
           <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
-          <!-- ({'name' : k, 'state' : v }, inverse)-->
         </div>
       </div>
       <div class="line"></div>
 
-      <!-- 3 -->
       <div class="itemBox">
         <div
             class="item bar"
@@ -46,7 +42,6 @@
       </div>
       <div class="line"></div>
 
-      <!-- 4 -->
       <div class="itemBox">
         <div
             class="item"
@@ -58,36 +53,14 @@
       </div>
       <div class="line"></div>
 
-      <!-- 5 -->
       <div class="itemBox">
         <div class="implant">
           <img src="@/assets/img/utils/icon-implant.png"/>
           <span class="same">임플란트 식립</span>
         </div>
-        <!--<div
-            class="item"
-            v-for="(v, k) in fifth" :key="k"
-            @click="fifth[k] = !v"
-            :class="{isToggle:v}"
-        >
-          <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
-        </div>-->
       </div>
       <div class="line"></div>
-      <!-- 6 -->
-      <!--<div class="itemBox">
-        <div
-            class="item"
-            v-for="(v, k) in sixth" :key="k"
-            @click="sixth[k] = !v"
-            :class="{isToggle:v}"
-        >
-          <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
-        </div>
-      </div>
-      <div class="line"></div>-->
 
-      <!-- 7 -->
       <span class="same" style="padding: 0 0 0 3px;">초기화</span>
       <div class="itemBox">
         <button class="item bar same" @click.prevent="$refs.VueCanvasDrawing.undo()">Undo</button>
@@ -180,7 +153,6 @@ import {xmlToJson} from '@/assets/js/x2j.js';
 
 import axios from "axios";
 import drf from '@/api/drf';
-// import {}
 import {mapGetters, mapActions} from 'vuex';
 import Constant from "@/common/Constant.js";
 import VueDrawingCanvas from "vue-drawing-canvas";
@@ -346,16 +318,12 @@ export default {
 
         const ch = this.patientSeriesList.chartId;
         this.patientSeriesList.entity.forEach(async e => {
-          // create time
           const cr = e.Created;
 
           // image
           const url = await axios({
             url: drf.patient.patientImgFileDownload(e.UniqueID),
             method: 'get',
-            // headers: {
-            //   "Content-Type": "multipart/form-data"
-            // }
             responseType: 'blob',
           })
           const im = URL.createObjectURL(new Blob([url.data], {type: 'image/bmp'}));
@@ -404,21 +372,6 @@ export default {
             overl: dr.data.overlaies,
           })
         })
-
-        // this.imageArr = [];
-        // this.mainImg = ' ';
-        // this.patientSeriesList.forEach(async instanceID => {
-        //   const url = await axios({
-        //     url: drf.patient.patientImgFileDownload(instanceID),
-        //     method: 'get',
-        //     // headers: {
-        //     //   "Content-Type": "multipart/form-data"
-        //     // }
-        //     responseType: 'blob',
-        //   })
-        //   const re = URL.createObjectURL(new Blob([url.data], {type: 'image/bmp'}));
-        //   this.imageArr.push(re);
-        // })
       }
     }
   },
@@ -427,8 +380,6 @@ export default {
   },
 
   methods: {
-    // Button Toggle checked
-    // Refactoring 완료
     checkedToggling(idx, name, bool) {
       if (this.disable) {
         console.log(name, idx[name])
@@ -799,48 +750,22 @@ export default {
       })
     },
 
-    // (My) Web --> One2
+    // Web --> One2
     async save() {
-      // sharpen, windowing 수정 필요
       await this.getRefImage2Overlayes();
       var data = {
         "manipulate": {"effect": {"invert": this.second.inverse, "sharpen": 0}, "windowing": {"wc": 1000, "ww": 4000}},
         "overlaies": this.overlayes
       }
 
-      /*var data = {
-        "manipulate": {"effect": {"invert": false, "sharpen": 0}, "windowing": {"wc": 1000, "ww": 4000}},
-        "overlaies": [{
-          "scene_pos": {
-            "end": {"x": 0.21756374261872313, "y": 20.378470558620378},
-            "start": {"x": 0.50764873277702005, "y": -12.038527091569339}
-          },
-          "style": {
-            "brush": {"color": "#00ffffff"},
-            "pen": {"cap": 32, "color": "#ff0000ff", "join": 128, "style": 1, "width": 1}
-          },
-          "transformation": {"rot_deg": 0},
-          "type": "freedraw"
-        }]
-      }*/
-
       // const obj = JSON.parse(json);
       const s = JSON.stringify(data);
-      // console.log(s);
       axios({
-        // url: drf.patient.saveDrwingMarker('1.2.410.200062.2.1.20221013134141642.12.62098.726.713'),
         url: drf.patient.saveDrwingMarker('1.2.410.200062.2.1.20221222144825737.86.125615.843.799'),
         method: 'post',
         data: s
       })
-
-
-      // const link = document.createElement('a');
-      // link.download = 'param'; // filename
-      // link.href = this.image;
-      // link.click();
     },
-
 
     // async setImage(event) {
     //   let URL = window.URL;
@@ -873,7 +798,6 @@ export default {
      * dash       => freedraw       1
      * */
     // Web --> One2
-    // p.s. 제가 안맞추고 싶은 게 아니라 당사 네이밍 컨벤션이 이렇습니다... -정태영 사원
     getRefImage2Overlayes() {
       this.$refs.VueCanvasDrawing.images.forEach(e => {
             console.log(e);
@@ -974,7 +898,6 @@ export default {
       )
     },
 
-// base ===================================================
     ...
         mapActions([
           Constant.GET_PATIENTSERIESLIST,
@@ -986,7 +909,6 @@ export default {
 <style>
 .baseHeaderView {
   background-color: black;
-  /*background-color: orange;*/
   width: 100%;
   height: 100%;
   display: flex;
