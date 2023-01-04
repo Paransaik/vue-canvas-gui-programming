@@ -1,4 +1,4 @@
-<template>
+<template style="height: 100%">
   <div class="homeContainer">
     <HaederView/>
     <BaseHaederView/>
@@ -25,8 +25,7 @@ export default {
 .homeContainer {
   border: solid black 1px;
   /* border: 1px dotted red; */
-  height: 800px;
-  display: flex;
+  height: 100%;
   flex-direction: column;
 }
 </style>

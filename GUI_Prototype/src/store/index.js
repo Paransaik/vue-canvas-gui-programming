@@ -38,6 +38,7 @@ export default createStore({
 
   actions: {
     [Constant.GET_ALLPATIENTLIST]({ commit }) {
+      console.log("test");
       axios({
         url: drf.patient.allPatientList(),
         method: 'get'

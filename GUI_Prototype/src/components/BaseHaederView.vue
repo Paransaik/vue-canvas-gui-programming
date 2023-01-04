@@ -210,7 +210,7 @@ export default {
     // 0, 0 coordinate set
     coorWidth: 0,
     coorHeight: 0,
-    // halfHeight
+    // maginTop
     halfHeight: 0,
 
     // 모든 마커 정보
@@ -374,6 +374,7 @@ export default {
           const json = xmlToJson(XmlNode);
           pw = json.tags.tags[0].tag[0]["@attributes"].value;
           ph = json.tags.tags[0].tag[1]["@attributes"].value;
+          yRate = this.fullHeight / (ph * e.PixelSpacingH);
           yRate = this.fullHeight / (ph * e.PixelSpacingH);
           this.pictureHeightSize = this.fullHeight;
           this.pictureWidthSize = (pw / ph * this.fullHeight);

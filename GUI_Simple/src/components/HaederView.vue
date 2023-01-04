@@ -3,26 +3,25 @@
     <section class="section">
       <div class="searchBar">
         <input
-          list="patientUid"
-          type="text" 
-          class="searchInput" 
-          placeholder="Input patient Info"
-          @change="getPatientSeriesList"
+            list="patientUid"
+            type="text"
+            class="searchInput"
+            placeholder="Input patient Info"
+            @change="getPatientSeriesList"
         >
-
         <datalist id="patientUid">
           <option
-            class="searchOption"
-            v-for="aPL in allPatientList" 
-            :key="aPL"
-            :value="aPL.ChartID"
+              class="searchOption"
+              v-for="aPL in allPatientList"
+              :key="aPL"
+              :value="aPL.ChartID"
           >{{ `${aPL.LastName} ${aPL.MiddleName} ${aPL.FirstName}` }}
           </option>
         </datalist>
         <!-- ================================ -->
       </div>
       <div class="haeaderStatusBar">
-        <div>영상 보기</div>
+        <div>Simple Viewer</div>
         <div>ㅡ</div>
       </div>
     </section>
@@ -30,17 +29,15 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex';
+import {mapGetters, mapActions} from 'vuex';
 import Constant from "@/common/Constant";
 
 export default {
   name: 'HeaderView',
 
-  data: () => ({
-  }),
+  data: () => ({}),
 
-  components: {
-  },
+  components: {},
 
   computed: {
     ...mapGetters([
@@ -52,13 +49,10 @@ export default {
 
   },
 
-  watch: {
-  },
-
+  watch: {},
 
   created() {
     this.getAllPatientList();
-    this.processAPL();
   },
 
   methods: {
@@ -70,89 +64,80 @@ export default {
       Constant.GET_PATIENTRECORDFILENAMELIST,
     ]),
   }
+
+
 }
 </script>
 
 <style>
-  .headerView {
-    width: 100%;
-    display: flex;
-    align-items: center;
-  }
+.headerView {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
 
-  .section {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-  }
+.section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
 
-  .searchBar {
-    height: 50px;
-    padding: 10px 0px 10px 30px;
-    background-color: #f4f5f8;
-  }
-  
-  .btns {
-    display: flex;
-    flex-direction: column;
-    width: 400px;
-  }
+.searchBar {
+  height: 50px;
+  padding: 10px 0px 10px 30px;
+  background-color: #f4f5f8;
+}
 
-  .slt {
-    width: 400px;
-  }
+.searchInput {
+  width: 300px;
+}
 
-  .searchInput {
-    width: 300px;
-  }
+.searchOption {
+  z-index: 99;
+}
 
-  .searchOption{
-    z-index: 99;
-  }
+.haeaderStatusBar {
+  height: 30px;
+  padding: 0 15px;
+  opacity: 0.6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-weight: bold;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: normal;
+  letter-spacing: -0.75px;
+  color: #fff;
+  background-color: #123e72;
+}
 
-  .haeaderStatusBar{
-    height: 30px;
-    padding: 0 15px;
-    opacity: 0.6;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-family: MalgunGothic;
-    font-size: 14px;
-    font-weight: bold;
-    font-stretch: normal;
-    font-style: normal;
-    line-height: normal;
-    letter-spacing: -0.75px;
-    color: #fff;
-    background-color: #123e72;
-  }
+/* autocopmlete */
+/* .autocomplete {
+  position: relative;
+  width: 130px;
+}
 
-  /* autocopmlete */
-  /* .autocomplete {
-    position: relative;
-    width: 130px;
-  }
+.autocomplete-results {
+  padding: 0;
+  margin: 0;
+  border: 1px solid #eeeeee;
+  height: 120px;
+  overflow: auto;
+  width: 100%;
+}
 
-  .autocomplete-results {
-    padding: 0;
-    margin: 0;
-    border: 1px solid #eeeeee;
-    height: 120px;
-    overflow: auto;
-    width: 100%;
-  }
+.autocomplete-result {
+  list-style: none;
+  text-align: left;
+  padding: 4px 2px;
+  cursor: pointer;
+}
 
-  .autocomplete-result {
-    list-style: none;
-    text-align: left;
-    padding: 4px 2px;
-    cursor: pointer;
-  }
-
-  .autocomplete-result.is-active,
-  .autocomplete-result:hover {
-    background-color: #4aae9b;
-    color: white;
-  } */
+.autocomplete-result.is-active,
+.autocomplete-result:hover {
+  background-color: #4aae9b;
+  color: white;
+} */
 </style>

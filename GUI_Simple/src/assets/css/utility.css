@@ -1,13 +1,13 @@
 .utilityView {
-    min-width: 130px;
-    max-width: 130px;
-    height: auto;
+    /*min-width: 56px;*/
+    max-width: 56px;
+    height: 100%;
     padding: 8px;
     background-color: #eaeff3;
 }
 
 .line {
-    width: 110px;
+    width: 37px;
     height: 1px;
     margin: 5px 3px 5px 1.5px;
     border: solid 1px #cdd2d9;
@@ -22,46 +22,18 @@
 .item {
     width: 32px;
     height: 32px;
-    margin: 3px;
     border-radius: 4px;
     border: solid 1px #b9bfcc;
     background-color: #fff;
+    margin: 3px 0 0 4px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
 }
 
-.bar {
-    width: 51px;
-}
-
-.implant {
-    width: 108px;
-    height: 32px;
-    margin: 7.5px 3px 8px;
-    border-radius: 4px;
-    box-shadow: 0 1px 0 0 rgba(39, 50, 57, 0.04);
-    border: solid 1px #b9bfcc;
-    background-color: #fff;
-    display: flex;
-    align-items: center;
-    padding: 0 0 0 5px;
-}
-
-.same {
-    font-size: 13px;
-    font-weight: bold;
-    font-stretch: normal;
-    font-style: normal;
-    line-height: normal;
-    letter-spacing: -2px;
-    text-align: center;
-    color: #000;
-}
-
 .colorSelect {
-    width: 69px;
+    width: 32px;
     height: 32px;
     margin: 3px 0 0 4px;
     padding: 2px 6px 5px 0;
