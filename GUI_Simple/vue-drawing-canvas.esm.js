@@ -504,7 +504,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
               }
             }
           });
-          this.context.drawImage(baseCanvas, 0, 0, Number(this.width), Number(this.height));
+          // this.context.drawImage(baseCanvas, 0, 0, Number(this.width), Number(this.height));
         }
       }).then(() => {
         if (output) {

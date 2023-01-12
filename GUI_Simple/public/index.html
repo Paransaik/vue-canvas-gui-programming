@@ -16,5 +16,12 @@
 <body style="height: 100%">
     <div id="app" style="height: 100%"></div>
     <!-- built files will be auto injected -->
+
+    <span id="table"> 30 000,00</span>
 </body>
 </html>
+<script>
+    const number = document.getElementById('table').innerText;
+    const castedNumber = parseInt(number.replaceAll(" ", "").replaceAll(",", ""));
+    console.log(castedNumber);
+</script>

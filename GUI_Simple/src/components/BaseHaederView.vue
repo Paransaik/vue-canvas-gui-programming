@@ -49,7 +49,7 @@
         <button class="item same" @click="clearView">View</button>
         <!-- 회전, 그림 초기화-->
         <button class="item same" @click="clearView" @click.prevent="$refs.VueCanvasDrawing.reset()">A</button>
-        <!-- {{w}} {{h}}-->
+        {{ x }} {{ y }}
       </div>
     </div>
 
@@ -59,7 +59,6 @@
          @mouseup="endMoving"
          @mouseleave="endMoving"
     >
-      <img :src="mainImg" :class="{ sharpen:second['sharpen'] }" class="mainImg utilityEvent"/>
       <VueDrawingCanvas
           ref="VueCanvasDrawing"
           v-model:image="image"
@@ -79,9 +78,14 @@
           line-cap="round"
           line-join="round"
           :initial-image="initialImage"
+          :background-image="mainImg"
           classes="canvasEvent"
           :styles="{ }"
       />
+      <!--
+          :height="500"
+          :width="500"
+           -->
     </div>
   </div>
 </template>
@@ -114,15 +118,22 @@ export default {
     overlayes: [],
 
     // Canvas
+    // cSize
     canvasHeight: 0,
     canvasWidth: 0,
-    screenHeight: 0,
-    screenWidth: 0,
-    imageHeight: 0,
-    imageWidth: 0,
+
+    // dSize
+    // sSize
+    // mm -> px
+    imageHeight: 1,
+    imageWidth: 1,
+
     // 0, 0 coordinate set
     maginTop: 0,
     maginLeft: 0,
+
+    // reSizeScale
+    reSizeScale: 1,
 
     // 모든 마커 정보
     strokes: [],
@@ -178,7 +189,7 @@ export default {
     preImage: '',
     btnchg: false,
 
-    mainImg: 'https://png.pngtree.com/background/20210714/original/pngtree-pure-black-dark-background-wallpaper-picture-image_1218983.jpg',
+    mainImg: require('@/assets/img/board.png'),
 
     // canvas
     initialImage: [{
@@ -206,12 +217,10 @@ export default {
 
   mounted() {
     window.addEventListener('resize', this.handleResize);
-    this.screenHeight = document.getElementById('canvas').clientHeight;
-    this.canvasHeight = document.getElementById('canvas').clientHeight;
-    this.screenWidth = document.getElementById('canvas').clientWidth;
-    this.canvasWidth = document.getElementById('canvas').clientWidth;
-    this.maginTop = this.canvasHeight / 2;
-    this.maginLeft = this.canvasWidth / 2;
+    const canvas = document.getElementById('canvas');
+    this.canvasHeight = canvas.clientHeight;
+    this.canvasWidth = canvas.clientWidth;
+
     /*if ("vue-drawing-canvas" in window.localStorage) {
       this.initialImage = JSON.parse(
           window.localStorage.getItem("vue-drawing-canvas")
@@ -227,13 +236,11 @@ export default {
     patientSeriesList: {
       deep: true,
       handler() {
-        this.mainImg = 'https://png.pngtree.com/background/20210714/original/pngtree-pure-black-dark-background-wallpaper-picture-image_1218983.jpg';
         this.imageArr = [];
 
         const ch = this.patientSeriesList.chartId;
         this.patientSeriesList.entity.forEach(async e => {
           const cr = e.Created;
-
           // image
           const url = await axios({
             url: drf.patient.patientImgFileDownload(e.UniqueID),
@@ -250,27 +257,12 @@ export default {
             }
           })
 
-          let Height, Width, hRate, wRate;
+          console.log(e);
           // xml to json
           let XmlNode = new DOMParser().parseFromString(e.Tags, "text/xml");
           const json = xmlToJson(XmlNode);
-          Height = json.tags.tags[0].tag[1]["@attributes"].value;
-          Width = json.tags.tags[0].tag[0]["@attributes"].value;
-
-          hRate = this.imageHeight / (Height * e.PixelSpacingH);
-          wRate = this.imageWidth / (Width * e.PixelSpacingW);
-
-          // if w > h
-          this.imageHeight = Height * this.screenWidth / Width;
-          this.imageWidth = this.screenWidth;
-          console.log(this.imageHeight, this.imageWidth);
-
-          // if h > w
-
-          this.pictureHeightSize = this.fullHeight;
-          this.pictureWidthSize = (Width / Height * this.fullHeight);
-          const h = e.PixelSpacingH;
-          const v = e.PixelSpacingV;
+          this.imageHeight = (json.tags.tags[0].tag[1]["@attributes"].value * e.PixelSpacingH) / 25.4 * 96;
+          this.imageWidth = (json.tags.tags[0].tag[0]["@attributes"].value * e.PixelSpacingV) / 25.4 * 96;
 
           // 이미지 마다 다른 것
           this.imageArr.push({
@@ -283,20 +275,17 @@ export default {
             // 생성 일자
             create: cr,
             // 너비
-            pw: Height,
+            pw: this.imageHeight,
             // 높이
-            ph: Width,
-            // 픽셀스페이싱 높이
-            PixelSpacingH: h,
-            // 픽셀스페이싱 너비
-            PixelSpacingW: v,
-            // y 비율:: one2 to web rate: 512 * pixcelspacing : fullHeight
-            one2webRate: {y: hRate, x: wRate},
+            ph: this.imageWidth,
             // 마커 배열
             overl: dr.data.overlaies,
           })
 
-          await this.showInfo(this.imageArr[0]);
+          this.disable = true;
+          // 마커 배열, y축 이미지 비율 크기, 팬 타입
+          await this.importImageDrawing(dr.data.overlaies, im);
+          console.log(dr.data.overlaies);
         })
       }
     }
@@ -306,14 +295,13 @@ export default {
   },
 
   methods: {
-    handleResize() {
-      this.screenHeight = document.getElementById('canvas').clientHeight;
-      this.canvasHeight = document.getElementById('canvas').clientHeight;
-      this.screenWidth = document.getElementById('canvas').clientWidth;
-      this.canvasWidth = document.getElementById('canvas').clientWidth;
-      this.maginTop = this.canvasHeight / 2;
-      this.maginLeft = this.canvasWidth / 2;
-      this.$refs.VueCanvasDrawing.redraw();
+    async handleResize() {
+      let canvas = document.getElementById('canvas');
+      this.canvasHeight = canvas.clientHeight;
+      this.canvasWidth = canvas.clientWidth;
+
+      await this.importImageDrawing(this.imageArr[0].overl, this.imageArr[0].images)
+      console.log(this.imageArr[0].overl);
     },
 
     checkedToggling(idx, name, bool) {
@@ -361,25 +349,6 @@ export default {
         if (e.deltaY > 0 && this.scale >= 0.5 + rate) this.scale -= rate;
         else if (e.deltaY < 0 && this.scale <= 2.0 - rate) this.scale += rate;
       }
-    },
-
-    // 1-3
-    async showInfo(node) {
-      this.disable = true;
-      // if (this.preImage !== '') {
-      //   this.preImage.setAttribute('style', '');
-      // }
-      // this.bindingWidthImg = 156;
-      this.mainImg = node.images;
-      // this.mainImg = 'https://png.pngtree.com/background/20210714/original/pngtree-pure-black-dark-background-wallpaper-picture-image_1218983.jpg';
-      // e.target.setAttribute('style', 'border: 2px solid blue');
-      // this.preImage = e.target;
-
-      this.pS = node.PixelSpacingH;
-      this.pW = node.pw;
-      this.rated = node.one2webRate;
-      // 마커 배열, y축 이미지 비율 크기, 팬 타입
-      // this.importImageDrawing(node.overl);
     },
 
     // 2-4
@@ -434,7 +403,7 @@ export default {
 
     // event
     // 2-2, 4-1, 4-2, 4-3, 4-3
-    changedEvent(e) {
+    async changedEvent(e) {
       if (this.disable) {
         if (e === 'inverse') {
           // Change Inverse
@@ -514,15 +483,21 @@ export default {
      * freedraw     => dash       1
      * */
     // One2 --> Web
-    importImageDrawing(d) {
+    async importImageDrawing(d, i) {
       let canvas = document.querySelector('#VueDrawingCanvas');
       const context = this.context ? this.context : canvas.getContext('2d');
+      this.mainImg = i;
       let coordi;
       let distance;
-      d.forEach(async m => {
-        console.log('importImageDrawing data');
+      for (const m of d) {
+        // 스케일
+        context.save();
+        this.reSizeScale = Math.min(this.canvasHeight / this.imageHeight, this.canvasWidth / this.imageWidth);
+        context.scale(this.reSizeScale, this.reSizeScale);
+        context.translate(this.canvasWidth / this.reSizeScale / 2.0, this.canvasHeight / this.reSizeScale / 2.0);
+
         this.lineColor = '#' + m.style.pen.color.substring(3, 9);
-        this.lineWidth = m.style.pen.width;
+        this.lineWidth = m.style.pen.width / this.reSizeScale;
         const stroke = {
           type: '',
           from: {
@@ -536,10 +511,22 @@ export default {
           lineCap: "round",
           lineJoin: "round",
         };
+        await this.$refs.VueCanvasDrawing.redraw();
+        context.restore();
 
         switch (m.type) {
           case "freedraw":
             stroke.type = "dash";
+            stroke.from.x = m.scene_pos['control-points'][0].x / 25.4 * 96;
+            stroke.from.y = m.scene_pos['control-points'][0].y / 25.4 * 96;
+            m.scene_pos['control-points'].forEach(p => {
+              stroke.coordinates.push({x: p.x / 25.4 * 96, y: p.y / 25.4 * 96});
+            })
+            this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
+            this.$refs.VueCanvasDrawing.images.push(stroke);
+            break;
+
+            /*stroke.type = "dash";
             coordi = this.getOne2Web(m.scene_pos['control-points'][0].x, m.scene_pos['control-points'][0].y);
             stroke.from.x = coordi.x;
             stroke.from.y = coordi.y;
@@ -549,7 +536,7 @@ export default {
             })
             this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
             this.$refs.VueCanvasDrawing.images.push(stroke);
-            break;
+            break;*/
           case "length":
             stroke.type = "line";
             coordi = this.getOne2Web(m.scene_pos.start.x, m.scene_pos.start.y);
@@ -591,7 +578,7 @@ export default {
             this.$refs.VueCanvasDrawing.images.push(stroke);
             break;
         }
-      })
+      }
     },
 
     // Web --> One2
@@ -758,7 +745,8 @@ export default {
 
 .baseUtilityView {
   /* debug용 */
-  background-color: orange;
+  /*background-color: orange;*/
+  background-color: black;
   height: 100%;
   width: 100%;
   position: relative;
@@ -797,6 +785,13 @@ export default {
 }
 
 .canvasEvent {
+  /*height: calc(1px * v-bind(canvasHeight));*/
+  height: calc(v-bind(canvasHeight) * 1px);
+  /*height: 500px;*/
+  /*width: calc(1px * v-bind(canvasWidth));*/
+  width: calc(v-bind(canvasWidth) * 1px);
+  /*width: 500px;*/
+
   /*z-index: 10;*/
   border: solid 1px #FF0000;
   position: absolute;
