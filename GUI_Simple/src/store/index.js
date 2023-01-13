@@ -52,7 +52,7 @@ export default createStore({
 
     [Constant.GET_PATIENTSERIESLIST]({commit}, uid) {
       // uid.target.value = chartID
-      console.log(drf.patient.patientSeriesList(uid.target.value));
+      // console.log(drf.patient.patientSeriesList(uid.target.value));
       axios({
         url: drf.patient.patientSeriesList(uid.target.value),
         method: 'get'
