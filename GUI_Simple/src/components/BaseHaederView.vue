@@ -757,6 +757,11 @@ export default {
   overflow: hidden;
 }
 
+.isToggle {
+  border: solid 2px blue;
+}
+
+/* mainImg에 적용 되는 event
 .mainImg {
   position: absolute;
   object-fit: contain;
@@ -766,18 +771,14 @@ export default {
   left: calc(1px * v-bind(movingLeft));
 }
 
-.isToggle {
-  border: solid 2px blue;
-}
-
 .utilityEvent {
-  /*overflow: hidden;*/
-  /* 2-1, 2-2, */
+  !*overflow: hidden;*!
+  !* 2-1, 2-2, *!
   filter: brightness(calc(1% * v-bind(brightness))) invert(calc(1% * v-bind(inverse)));
 
-  /* 1-2, 4-1, 4-2, 4-3, 4-4 */
+  !* 1-2, 4-1, 4-2, 4-3, 4-4 *!
   transform: scale(v-bind('scale')) rotate(calc(1deg * v-bind(ang))) rotateX(calc(1deg * v-bind(rotX))) rotateY(calc(1deg * v-bind(rotY)));
-}
+}*/
 
 /* 2-3 */
 .sharpen {
