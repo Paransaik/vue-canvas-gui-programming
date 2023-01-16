@@ -189,21 +189,56 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
           const image = new Image();
           image.src = this.backgroundImage;
           image.onload = () => {
+            this.context.save();
+            console.log('call by drawBackgoundIamge')
+            const pixelspacing = 0.100000001;
+            const dHeight = (image.height * pixelspacing) / 25.4 * 96;
+            const dWidth = (image.width * pixelspacing) / 25.4 * 96;
+
+            this.context.translate(dWidth / -2.0, dHeight / -2.0);
+            this.context.drawImage(image, 0, 0, image.width, image.height, 0, 0, dWidth, dHeight);
+            this.context.translate(dWidth / 2.0, dHeight / 2.0);
+
             // this.context.drawImage(image, 0, 0, Number(this.width), Number(this.height));
-            this.context.drawImage(image, (this.width -  this.height) / 2, 0, Number(this.height), Number(this.height));
+            this.context.restore();
             this.loadedImage = image;
             resolve();
           };
         });
       } else {
+        console.log('call by drawBackgoundIamge2');
+        this.context.save();
+        const cvs = document.getElementById('canvas');
+        const canvasHeight = cvs.clientHeight;
+        const canvasWidth = cvs.clientWidth;
+
+        const pixelspacing = 0.100000001;
+        const dHeight = (this.loadedImage.height * pixelspacing) / 25.4 * 96;
+        const dWidth = (this.loadedImage.width * pixelspacing) / 25.4 * 96;
+
+        const reSizeScale = Math.min(canvasHeight / dHeight, canvasWidth / dWidth);
+        this.context.scale(reSizeScale, reSizeScale);
+        this.context.translate(canvasWidth / reSizeScale / 2.0, canvasHeight / reSizeScale / 2.0);
+        this.context.translate(dWidth / -2.0, dHeight / -2.0);
+        this.context.drawImage(this.loadedImage, 0, 0, this.loadedImage.width, this.loadedImage.height, 0, 0, dWidth, dHeight);
+        this.context.translate(dWidth / 2.0, dHeight / 2.0);
+        this.context.restore();
+
         // this.context.drawImage(this.loadedImage, 0, 0, Number(this.width), Number(this.height));
-        this.context.drawImage(this.loadedImage, (this.width -  this.height) / 2, 0, Number(this.height), Number(this.height));
       }
     },
 
     getCoordinates(event) {
       let x, y;
 
+      const cvs = document.getElementById('canvas');
+      const canvasHeight = cvs.clientHeight;
+      const canvasWidth = cvs.clientWidth;
+      const pixelspacing = 0.100000001;
+      const dHeight = (this.loadedImage.height * pixelspacing) / 25.4 * 96;
+      const dWidth = (this.loadedImage.width * pixelspacing) / 25.4 * 96;
+
+      const reSizeScale = Math.min(canvasHeight / dHeight, canvasWidth / dWidth);
       if (event.touches && event.touches.length > 0) {
         let canvas = document.querySelector('#' + this.canvasId);
         let rect = canvas.getBoundingClientRect();
@@ -213,10 +248,9 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
         x = event.offsetX;
         y = event.offsetY;
       }
-
       return {
-        x: x,
-        y: y
+        x: (x - (canvasWidth / 2.0)) / reSizeScale,
+        y: (y - (canvasHeight / 2.0)) / reSizeScale
       };
     },
 
@@ -392,11 +426,22 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
           context.closePath();
         }
       } else {
+        context.save();
+        const cvs = document.getElementById('canvas');
+        const canvasHeight = cvs.clientHeight;
+        const canvasWidth = cvs.clientWidth;
+
+        const pixelspacing = 0.100000001;
+        const dHeight = (this.loadedImage.height * pixelspacing) / 25.4 * 96;
+        const dWidth = (this.loadedImage.width * pixelspacing) / 25.4 * 96;
+        const reSizeScale = Math.min(canvasHeight / dHeight, canvasWidth / dWidth);
+        context.scale(reSizeScale, reSizeScale);
+        context.translate(canvasWidth / reSizeScale / 2.0, canvasHeight / reSizeScale / 2.0);
         context.moveTo(strokes.from.x, strokes.from.y);
         strokes.coordinates.forEach(stroke => {
           context.lineTo(stroke.x, stroke.y);
 
-          if (strokes.type === 'arrow') {
+          /*if (strokes.type === 'arrow') {
             // 11.22. Arrow Mark
             var aWidth = 5;
             var aLength = 12;
@@ -414,11 +459,13 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
             context.setTransform(1, 0, 0, 1, 0, 0);
             // Arrow Mark ENd
           }
+          */
         });
 
         if (closingPath) {
           context.closePath();
         }
+        context.restore();
       }
 
       if (strokes.fill) {
@@ -504,7 +551,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
               }
             }
           });
-          // this.context.drawImage(baseCanvas, 0, 0, Number(this.width), Number(this.height));
+          this.context.drawImage(baseCanvas, 0, 0, Number(this.width), Number(this.height));
         }
       }).then(() => {
         if (output) {
