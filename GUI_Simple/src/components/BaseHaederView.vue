@@ -228,7 +228,9 @@ export default {
           window.localStorage.getItem("vue-drawing-canvas")
       );
     }*/
-  }, computed: {
+  },
+
+  computed: {
     ...mapGetters([
       'patientSeriesList',
     ]),

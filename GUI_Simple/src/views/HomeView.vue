@@ -2,7 +2,8 @@
   <div class="homeContainer">
     <HaederView/>
     <BaseHaederView/>
-    <div id="cursor" :style="cursorPoint"></div>
+    <!-- cursor event -->
+    <!-- <div id="cursor" :style="cursorPoint"></div> -->
   </div>
 </template>
 
@@ -16,10 +17,9 @@ export default {
 
   components: {
     HaederView,
-    BaseHaederView
-  },
-
-  data() {
+    BaseHaederView,
+  }
+  /*data() {
     return {
       x: 0,
       y: 0,
@@ -38,7 +38,7 @@ export default {
   },
   mounted() {
     document.addEventListener("mousemove", this.moveCursor);
-  }
+  }*/
 }
 </script>
 
@@ -49,7 +49,7 @@ export default {
   height: 100%;
   flex-direction: column;
 }
-
+/* cursor event */
 /*#cursor {
   position: fixed;
   width: 20px;
