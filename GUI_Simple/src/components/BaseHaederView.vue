@@ -187,9 +187,6 @@ export default {
     // 4 o
     fourth: ['01', '02', '03', '04'],
 
-    preImage: '',
-    btnchg: false,
-
     mainImg: require('@/assets/img/board.png'),
 
     // canvas
@@ -290,6 +287,7 @@ export default {
           this.tempOverlaies = dr.data.overlaies;
           this.tempImage = im;
           // 마커 배열, y축 이미지 비율 크기, 팬 타입
+          await this.setCanvasScale();
           await this.importImageDrawing();
         })
       }
@@ -304,14 +302,13 @@ export default {
       let canvas = document.getElementById('canvas');
       this.canvasHeight = canvas.clientHeight;
       this.canvasWidth = canvas.clientWidth;
-
+      await this.setCanvasScale();
       await this.importImageDrawing()
       console.log(this.imageArr[0].overl);
     },
 
     checkedToggling(idx, name, bool) {
       if (this.disable) {
-        console.log(name, idx[name])
         if (idx[name] === bool) {
           this.first.pan = false;
           this.second.bright = false;
@@ -357,13 +354,14 @@ export default {
     },
 
     // 2-4
-    startCoordinate(e) {
+    async startCoordinate(e) {
       if (this.second.ruler) {
         this.getCoordinate(e);
         this.startX = this.x;
         this.startY = this.y;
       }
     },
+
     endCoordinate(e) {
       if (this.second.ruler) {
         this.getCoordinate(e);
@@ -393,7 +391,6 @@ export default {
     changedMouseEvent(e) {
       if (this.downFlag && this.second.bright) {
         this.lock = this.second.bright;
-        this.cnt++;
         this.preX = this.x;
         this.preY = this.y;
         this.getCoordinate(e);
@@ -419,6 +416,16 @@ export default {
           // 4-1, 4-2, 4-3, 4-4
           // @click="utilityEvent(i), send({'name' : k, 'state' : i }, [ang, rotX, rotY])"
           if (e === 0) {
+            this.ang += 90;
+          } else if (e === 1) {
+            this.ang -= 90;
+          } else if (e === 2) {
+            console.log(2);
+          } else if (e === 3) {
+            console.log(3);
+          }
+
+          /*if (e === 0) {
             this.ang = (this.ang + 90) % 360
           } else if (e === 1) {
             if (this.ang === 0) this.ang = 360;
@@ -435,8 +442,16 @@ export default {
             } else {
               this.rotY = (this.rotY % 360) + 180;
             }
-          }
+          }*/
         }
+
+        this.$refs.VueCanvasDrawing.context.save();
+        // 화면 중앙에서 좌측 상단으로 변경
+        this.$refs.VueCanvasDrawing.context.translate(this.canvasWidth / this.reSizeScale / -2.0, this.canvasHeight / this.reSizeScale / -2.0);
+        await this.setCanvasTransrateAndRoate();
+        await this.importImageDrawing();
+        this.$refs.VueCanvasDrawing.context.restore();
+
       }
     },
 
@@ -476,6 +491,34 @@ export default {
       this.rotY = 0;
     },
 
+    async setCanvasScale() {
+      this.mainImg = this.tempImage;
+      this.$refs.VueCanvasDrawing.context.font = "10px serif"
+      this.$refs.VueCanvasDrawing.context.textAlign = "start"
+      this.$refs.VueCanvasDrawing.context.textBaseline = "alphabetic";
+      this.reSizeScale = Math.min(this.canvasHeight / this.imageHeight, this.canvasWidth / this.imageWidth);
+      // 1. 스케일 -> 캔바스 스케일을 높이와 너비 중 짧은 걸 기준으로 맞춤
+      this.$refs.VueCanvasDrawing.context.scale(this.reSizeScale, this.reSizeScale);
+
+      await this.setCanvasTransrateAndRoate();
+    },
+
+    async setCanvasTransrateAndRoate() {
+      this.$refs.VueCanvasDrawing.context.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+      // 2. 트랜스레이트 -> 화면의 중앙으로 이동
+      this.$refs.VueCanvasDrawing.context.translate(this.canvasWidth / this.reSizeScale / 2.0, this.canvasHeight / this.reSizeScale / 2.0);
+
+      // 3. 로테이트 -> 효과 적용
+      this.$refs.VueCanvasDrawing.context.rotate((Math.PI / 180) * this.ang);
+
+      // 4. 트랜스레이트 -> 화면의 중앙에서 그림 박기 위한 0, 0으로 이동
+      this.$refs.VueCanvasDrawing.context.translate(this.imageWidth / -2.0, this.imageHeight / -2.0);
+      await this.$refs.VueCanvasDrawing.setBackground();
+
+      // 5. 그리기 위해 다시 원점 중앙 이동
+      this.$refs.VueCanvasDrawing.context.translate(this.imageWidth / 2.0, this.imageHeight / 2.0);
+    },
+
     /***
      * One2         => Canvas  pen.style
      * length       => line       0
@@ -488,23 +531,9 @@ export default {
      * */
     // One2 --> Web
     async importImageDrawing() {
-      let canvas = document.querySelector('#VueDrawingCanvas');
-      const context = this.context ? this.context : canvas.getContext('2d');
-      this.mainImg = this.tempImage;
-      let distance;
-      // context.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
-      context.save();
-      this.reSizeScale = Math.min(this.canvasHeight / this.imageHeight, this.canvasWidth / this.imageWidth);
-      // context.transform(this.reSizeScale, 0, 0, this.reSizeScale, this.canvasWidth / this.reSizeScale / 2.0, this.canvasHeight / this.reSizeScale / 2.0)
-      context.scale(this.reSizeScale, this.reSizeScale);
-      context.translate(this.canvasWidth / this.reSizeScale / 2.0, this.canvasHeight / this.reSizeScale / 2.0);
-      context.rotate((Math.PI / 180) * this.ang);
-      // context.translate(this.imageWidth / -2.0, this.imageHeight / -2.0);
-      await this.$refs.VueCanvasDrawing.redraw();
-      context.restore();
-
       for (const m of this.tempOverlaies) {
-        // 스케일
+        let distance;
+        // 선 속성 지정
         this.lineColor = '#' + m.style.pen.color.substring(3, 9);
         this.lineWidth = m.style.pen.width / this.reSizeScale;
         const stroke = {
@@ -529,7 +558,7 @@ export default {
             m.scene_pos['control-points'].forEach(p => {
               stroke.coordinates.push({x: p.x / 25.4 * 96, y: p.y / 25.4 * 96});
             })
-            this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
+            this.$refs.VueCanvasDrawing.drawShape(this.$refs.VueCanvasDrawing.context, stroke, false);
             this.$refs.VueCanvasDrawing.images.push(stroke);
             break;
           case "length":
@@ -544,19 +573,11 @@ export default {
             });
             distance = this.getDistance([{x: m.scene_pos.start.x, y: m.scene_pos.start.y},
               {x: m.scene_pos.end.x, y: m.scene_pos.end.y}]);
-            console.log(m.scene_pos.start.x);
+            console.log(distance);
             // 단위 표시하기
-            context.save();
-            this.reSizeScale = Math.min(this.canvasHeight / this.imageHeight, this.canvasWidth / this.imageWidth);
-            context.scale(this.reSizeScale, this.reSizeScale);
-            context.translate(this.canvasWidth / this.reSizeScale / 2.0, this.canvasHeight / this.reSizeScale / 2.0);
-            context.font = "10px serif"
-            context.textAlign = "start"
-            context.textBaseline = "alphabetic";
-            context.fillStyle = "#ffff00";
-            context.fillText(distance + ' mm', m.scene_pos["value-box"].x / 25.4 * 96, m.scene_pos["value-box"].y / 25.4 * 96);
-            context.restore();
-            this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
+            this.$refs.VueCanvasDrawing.context.fillStyle = "#ffff00";
+            this.$refs.VueCanvasDrawing.context.fillText(distance + ' mm', m.scene_pos["value-box"].x / 25.4 * 96, m.scene_pos["value-box"].y / 25.4 * 96);
+            this.$refs.VueCanvasDrawing.drawShape(this.$refs.VueCanvasDrawing.context, stroke, false);
             this.$refs.VueCanvasDrawing.images.push(stroke);
             break;
           case "multi-length":
@@ -568,17 +589,9 @@ export default {
             })
             distance = this.getDistance(m.scene_pos['control-points']);
             // 단위 표시하기
-            context.save();
-            this.reSizeScale = Math.min(this.canvasHeight / this.imageHeight, this.canvasWidth / this.imageWidth);
-            context.scale(this.reSizeScale, this.reSizeScale);
-            context.translate(this.canvasWidth / this.reSizeScale / 2.0, this.canvasHeight / this.reSizeScale / 2.0);
-            context.font = "10px serif"
-            context.textAlign = "start"
-            context.textBaseline = "alphabetic";
-            context.fillStyle = "#ffff00";
-            context.fillText(distance + ' mm', m.scene_pos["value-box"].x / 25.4 * 96, m.scene_pos["value-box"].y / 25.4 * 96);
-            context.restore();
-            this.$refs.VueCanvasDrawing.drawShape(context, stroke, false);
+            this.$refs.VueCanvasDrawing.context.fillStyle = "#ffff00";
+            this.$refs.VueCanvasDrawing.context.fillText(distance + ' mm', m.scene_pos["value-box"].x / 25.4 * 96, m.scene_pos["value-box"].y / 25.4 * 96);
+            this.$refs.VueCanvasDrawing.drawShape(this.$refs.VueCanvasDrawing.context, stroke, false);
             this.$refs.VueCanvasDrawing.images.push(stroke);
             break;
         }
@@ -803,6 +816,6 @@ export default {
   top: calc(1px * v-bind(movingTop));
   left: calc(1px * v-bind(movingLeft));
 
-  transform: scale(v-bind('scale')) rotate(calc(1deg * v-bind(ang))) rotateX(calc(1deg * v-bind(rotX))) rotateY(calc(1deg * v-bind(rotY)));
+  /*transform: scale(v-bind('scale')) rotate(calc(1deg * v-bind(ang))) rotateX(calc(1deg * v-bind(rotX))) rotateY(calc(1deg * v-bind(rotY)));*/
 }
 </style>
