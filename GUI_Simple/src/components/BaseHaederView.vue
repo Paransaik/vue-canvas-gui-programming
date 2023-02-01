@@ -281,7 +281,6 @@ export default {
             // 마커 배열
             overl: dr.data.overlaies,
           })
-
           this.disable = true;
 
           this.tempOverlaies = dr.data.overlaies;
@@ -303,8 +302,7 @@ export default {
       this.canvasHeight = canvas.clientHeight;
       this.canvasWidth = canvas.clientWidth;
       await this.setCanvasScale();
-      await this.importImageDrawing()
-      console.log(this.imageArr[0].overl);
+      await this.$refs.VueCanvasDrawing.redraw();
     },
 
     checkedToggling(idx, name, bool) {
@@ -331,7 +329,6 @@ export default {
     },
     moveImage(e) {
       if (this.first.pan && this.mouseFlag) {
-        console.log('call');
         this.movingTop += e.screenY - this.startTop;
         this.startTop = e.screenY;
         this.movingLeft += e.screenX - this.startLeft;
@@ -411,14 +408,14 @@ export default {
           // 2-2
           if (this.second[e] === true) this.inverse = 100;
           else this.inverse = 0;
-        } else {
+        } else if (typeof e === 'number') {
           // Change Angle
           // 4-1, 4-2, 4-3, 4-4
           // @click="utilityEvent(i), send({'name' : k, 'state' : i }, [ang, rotX, rotY])"
           if (e === 0) {
-            this.ang += 90;
+            this.$refs.VueCanvasDrawing.angle += 90;
           } else if (e === 1) {
-            this.ang -= 90;
+            this.$refs.VueCanvasDrawing.angle -= 90;
           } else if (e === 2) {
             console.log(2);
           } else if (e === 3) {
@@ -443,15 +440,15 @@ export default {
               this.rotY = (this.rotY % 360) + 180;
             }
           }*/
+          this.$refs.VueCanvasDrawing.context.save();
+          await this.$refs.VueCanvasDrawing.context.rotate((Math.PI / 180) * this.$refs.VueCanvasDrawing.angle);
+          await this.$refs.VueCanvasDrawing.redraw();
+          this.$refs.VueCanvasDrawing.context.restore();
         }
-
-        this.$refs.VueCanvasDrawing.context.save();
+        /*
         // 화면 중앙에서 좌측 상단으로 변경
         this.$refs.VueCanvasDrawing.context.translate(this.canvasWidth / this.reSizeScale / -2.0, this.canvasHeight / this.reSizeScale / -2.0);
-        await this.setCanvasTransrateAndRoate();
-        await this.importImageDrawing();
-        this.$refs.VueCanvasDrawing.context.restore();
-
+        */
       }
     },
 
@@ -499,24 +496,7 @@ export default {
       this.reSizeScale = Math.min(this.canvasHeight / this.imageHeight, this.canvasWidth / this.imageWidth);
       // 1. 스케일 -> 캔바스 스케일을 높이와 너비 중 짧은 걸 기준으로 맞춤
       this.$refs.VueCanvasDrawing.context.scale(this.reSizeScale, this.reSizeScale);
-
-      await this.setCanvasTransrateAndRoate();
-    },
-
-    async setCanvasTransrateAndRoate() {
-      this.$refs.VueCanvasDrawing.context.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
-      // 2. 트랜스레이트 -> 화면의 중앙으로 이동
-      this.$refs.VueCanvasDrawing.context.translate(this.canvasWidth / this.reSizeScale / 2.0, this.canvasHeight / this.reSizeScale / 2.0);
-
-      // 3. 로테이트 -> 효과 적용
-      this.$refs.VueCanvasDrawing.context.rotate((Math.PI / 180) * this.ang);
-
-      // 4. 트랜스레이트 -> 화면의 중앙에서 그림 박기 위한 0, 0으로 이동
-      this.$refs.VueCanvasDrawing.context.translate(this.imageWidth / -2.0, this.imageHeight / -2.0);
-      await this.$refs.VueCanvasDrawing.setBackground();
-
-      // 5. 그리기 위해 다시 원점 중앙 이동
-      this.$refs.VueCanvasDrawing.context.translate(this.imageWidth / 2.0, this.imageHeight / 2.0);
+      console.log('set Canvas Scale:: ' + this.reSizeScale);
     },
 
     /***
@@ -531,6 +511,21 @@ export default {
      * */
     // One2 --> Web
     async importImageDrawing() {
+      console.log('importImageDrawing---------------');
+      this.$refs.VueCanvasDrawing.context.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+      // 2. 트랜스레이트 -> 화면의 중앙으로 이동
+      this.$refs.VueCanvasDrawing.context.translate(this.canvasWidth / this.reSizeScale / 2.0, this.canvasHeight / this.reSizeScale / 2.0);
+
+      // 3. 로테이트 -> 효과 적용
+      this.$refs.VueCanvasDrawing.context.rotate((Math.PI / 180) * this.$refs.VueCanvasDrawing.angle);
+      console.log('rotate angle ' + this.$refs.VueCanvasDrawing.angle);
+      // 4. 트랜스레이트 -> 화면의 중앙에서 그림 박기 위한 0, 0으로 이동
+      this.$refs.VueCanvasDrawing.context.translate(this.imageWidth / -2.0, this.imageHeight / -2.0);
+      await this.$refs.VueCanvasDrawing.setBackground();
+
+      // 5. 그리기 위해 다시 원점 중앙 이동
+      this.$refs.VueCanvasDrawing.context.translate(this.imageWidth / 2.0, this.imageHeight / 2.0);
+
       for (const m of this.tempOverlaies) {
         let distance;
         // 선 속성 지정
@@ -562,7 +557,6 @@ export default {
             this.$refs.VueCanvasDrawing.images.push(stroke);
             break;
           case "length":
-            console.log('call by length');
             stroke.type = "line";
             stroke.from.x = m.scene_pos.start.x / 25.4 * 96;
             stroke.from.y = m.scene_pos.start.y / 25.4 * 96;
@@ -573,7 +567,6 @@ export default {
             });
             distance = this.getDistance([{x: m.scene_pos.start.x, y: m.scene_pos.start.y},
               {x: m.scene_pos.end.x, y: m.scene_pos.end.y}]);
-            console.log(distance);
             // 단위 표시하기
             this.$refs.VueCanvasDrawing.context.fillStyle = "#ffff00";
             this.$refs.VueCanvasDrawing.context.fillText(distance + ' mm', m.scene_pos["value-box"].x / 25.4 * 96, m.scene_pos["value-box"].y / 25.4 * 96);
@@ -646,7 +639,6 @@ export default {
     // Web --> One2
     getRefImage2Overlayes() {
       this.$refs.VueCanvasDrawing.images.forEach(e => {
-        console.log(e);
         const data = {"style": {}};
         let coordi, coordi2;
         const scene_pos = {};
@@ -737,7 +729,6 @@ export default {
           data["transformation"] = {"rot_deg": 0};
           // 4. type
           data["type"] = dataType;
-          console.log(data);
           this.overlayes.push(data);
         }
       })
