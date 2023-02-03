@@ -124,7 +124,6 @@ export default {
     // cSize
     canvasHeight: 0,
     canvasWidth: 0,
-    canvasMaxSize: 0,
 
     // dSize
     // sSize
@@ -218,7 +217,6 @@ export default {
     const canvas = document.getElementById('canvas');
     this.canvasHeight = canvas.clientHeight;
     this.canvasWidth = canvas.clientWidth;
-    this.canvasMaxSize = Math.max(this.canvasWidth, this.canvasHeight);
 
     /*if ("vue-drawing-canvas" in window.localStorage) {
       this.initialImage = JSON.parse(
@@ -286,6 +284,8 @@ export default {
           this.tempOverlaies = dr.data.overlaies;
           this.tempImage = im;
           // 마커 배열, y축 이미지 비율 크기, 팬 타입
+          this.mainImg = this.tempImage;
+
           await this.setCanvasScale();
           await this.importImageDrawing();
         })
@@ -299,9 +299,28 @@ export default {
   methods: {
     async handleResize() {
       let canvas = document.getElementById('canvas');
-      this.canvasHeight = canvas.clientHeight;
-      this.canvasWidth = canvas.clientWidth;
-      await this.setCanvasScale();
+      if (this.$refs.VueCanvasDrawing.angle === 90 || this.$refs.VueCanvasDrawing.angle === 270) {
+        this.canvasHeight = canvas.clientWidth;
+        this.canvasWidth = canvas.clientHeight;
+      } else {
+        this.canvasHeight = canvas.clientHeight;
+        this.canvasWidth = canvas.clientWidth;
+      }
+
+      // await this.setCanvasScale();
+      [this.reSizeScale] = await Promise.all([Math.min(this.canvasHeight / this.imageHeight, this.canvasWidth / this.imageWidth)]);
+      // 1. 스케일 -> 캔바스 스케일을 높이와 너비 중 짧은 걸 기준으로 맞춤
+      this.$refs.VueCanvasDrawing.context.scale(this.reSizeScale, this.reSizeScale);
+      // 2. 트랜스레이트 -> 화면의 중앙으로 이동
+      this.$refs.VueCanvasDrawing.context.translate(this.canvasWidth / this.reSizeScale / 2.0, this.canvasHeight / this.reSizeScale / 2.0);
+      // 3. 로테이트 -> 효과 적용
+      this.$refs.VueCanvasDrawing.context.rotate((Math.PI / 180) * this.$refs.VueCanvasDrawing.angle);
+      // 4. 트랜스레이트 -> 화면의 중앙에서 그림 박기 위한 0, 0으로 이동
+      /*this.$refs.VueCanvasDrawing.context.translate(this.imageWidth / -2.0, this.imageHeight / -2.0);
+      // 5. 배경화면 설정
+      await this.$refs.VueCanvasDrawing.drawBackgroundImage();
+      // 6. 그리기 위해 다시 원점 중앙 이동
+      this.$refs.VueCanvasDrawing.context.translate(this.imageWidth / 2.0, this.imageHeight / 2.0);*/
       await this.$refs.VueCanvasDrawing.redraw();
     },
 
@@ -440,10 +459,9 @@ export default {
               this.rotY = (this.rotY % 360) + 180;
             }
           }*/
-          this.$refs.VueCanvasDrawing.context.save();
-          await this.$refs.VueCanvasDrawing.context.rotate((Math.PI / 180) * this.$refs.VueCanvasDrawing.angle);
-          await this.$refs.VueCanvasDrawing.redraw();
-          this.$refs.VueCanvasDrawing.context.restore();
+          await this.drawing();
+          // await this.$refs.VueCanvasDrawing.context.rotate((Math.PI / 180) * this.$refs.VueCanvasDrawing.angle);
+          // await this.$refs.VueCanvasDrawing.redraw();
         }
         /*
         // 화면 중앙에서 좌측 상단으로 변경
@@ -488,17 +506,6 @@ export default {
       this.rotY = 0;
     },
 
-    async setCanvasScale() {
-      this.mainImg = this.tempImage;
-      this.$refs.VueCanvasDrawing.context.font = "10px serif"
-      this.$refs.VueCanvasDrawing.context.textAlign = "start"
-      this.$refs.VueCanvasDrawing.context.textBaseline = "alphabetic";
-      this.reSizeScale = Math.min(this.canvasHeight / this.imageHeight, this.canvasWidth / this.imageWidth);
-      // 1. 스케일 -> 캔바스 스케일을 높이와 너비 중 짧은 걸 기준으로 맞춤
-      this.$refs.VueCanvasDrawing.context.scale(this.reSizeScale, this.reSizeScale);
-      console.log('set Canvas Scale:: ' + this.reSizeScale);
-    },
-
     /***
      * One2         => Canvas  pen.style
      * length       => line       0
@@ -511,7 +518,6 @@ export default {
      * */
     // One2 --> Web
     async importImageDrawing() {
-      console.log('importImageDrawing---------------');
       this.$refs.VueCanvasDrawing.context.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
       // 2. 트랜스레이트 -> 화면의 중앙으로 이동
       this.$refs.VueCanvasDrawing.context.translate(this.canvasWidth / this.reSizeScale / 2.0, this.canvasHeight / this.reSizeScale / 2.0);
@@ -589,6 +595,55 @@ export default {
             break;
         }
       }
+      // this.$refs.VueCanvasDrawing.context.restore();
+    },
+
+    async setCanvasScale(){
+      this.$refs.VueCanvasDrawing.context.save();
+      this.$refs.VueCanvasDrawing.context.font = "10px serif"
+      this.$refs.VueCanvasDrawing.context.textAlign = "start"
+      this.$refs.VueCanvasDrawing.context.textBaseline = "alphabetic";
+
+      this.reSizeScale = Math.min(this.canvasHeight / this.imageHeight, this.canvasWidth / this.imageWidth);
+      // 1. 스케일 -> 캔바스 스케일을 높이와 너비 중 짧은 걸 기준으로 맞춤
+      this.$refs.VueCanvasDrawing.context.scale(this.reSizeScale, this.reSizeScale);
+      console.log('set Canvas Scale:: ' + this.reSizeScale);
+
+    },
+
+    async drawing(){
+      // await this.setCanvasScale();
+      const canvasHeight = Number(this.height);
+      const canvasWidth = Number(this.width);
+      const pixelspacing = 0.100000001;
+      let dHeight = (this.$refs.VueCanvasDrawing.loadedImage.height * pixelspacing) / 25.4 * 96;
+      let dWidth = (this.$refs.VueCanvasDrawing.loadedImage.width * pixelspacing) / 25.4 * 96;
+
+      this.$refs.VueCanvasDrawing.context.clearRect(canvasWidth / -2.0, canvasHeight / -2.0, canvasWidth, canvasHeight);
+      // 2. 트랜스레이트 -> 화면의 중앙으로 이동
+      // 4. 트랜스레이트 -> 화면의 중앙에서 그림 박기 위한 0, 0으로 이동
+      this.$refs.VueCanvasDrawing.context.translate(this.imageWidth / -2.0, this.imageHeight / -2.0);
+      // this.$refs.VueCanvasDrawing.context.translate(dWidth / -2.0, dHeight / -2.0);
+      this.$refs.VueCanvasDrawing.context.rotate((Math.PI / 180) * this.$refs.VueCanvasDrawing.angle);
+      console.log(this.$refs.VueCanvasDrawing.angle);
+      await this.$refs.VueCanvasDrawing.setBackground().then(() => {
+        // console.log()
+        if (this.$refs.VueCanvasDrawing) {
+          // 5. 그리기 위해 다시 원점 중앙 이동
+          this.$refs.VueCanvasDrawing.context.translate(dWidth / 2.0, dHeight / 2.0);
+          this.$refs.VueCanvasDrawing.images.forEach(stroke => {
+            if (stroke.type !== 'circle' || stroke.type === 'circle' && stroke.coordinates.length > 0) {
+              this.$refs.VueCanvasDrawing.drawShape(this.$refs.VueCanvasDrawing.context, stroke,
+                  stroke.type === 'eraser' ||
+                  stroke.type === 'dash' ||
+                  stroke.type === 'line' ||
+                  stroke.type === 'tapeline' ||
+                  stroke.type === 'angle' ||
+                  stroke.type === 'arrow' ? false : true);
+            }
+          });
+        }
+      });
     },
 
     // Web --> One2
