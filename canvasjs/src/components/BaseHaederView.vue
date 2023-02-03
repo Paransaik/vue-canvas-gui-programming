@@ -56,7 +56,12 @@
     <div class="baseUtilityView" id="divCanvas">
       <canvas id="canvas"
               :width="canvasWidth"
-              :height="canvasHeight">
+              :height="canvasHeight"
+              @mousedown="startDraw($event)"
+              @mousemove="lineDraw($event), getCoordinates($event)"
+              @mouseup="stopDraw()"
+              @mouseleave="stopDraw()"
+      >
       </canvas>
     </div>
   </div>
@@ -77,9 +82,9 @@ export default {
   components: {},
 
   data: () => ({
-    /*
-    * width, height
-    * */
+    /***
+     * width, height
+     * */
     DPI: 96,
     // canvas width, height
     canvasWidth: 0,
@@ -90,27 +95,43 @@ export default {
     realityImageHeight: 0,
     //=========================================
 
-    /*
-    * canvas
-    * */
+    /***
+     * canvas
+     * */
     imageArr: [],
     downFlag: false,
     x: 0,
     y: 0,
     preX: 0,
     preY: 0,
-    image: "",
+    image: '',
     strokeType: "dash",
     fillShape: false,
     backgroundImage: null,
 
-    /*
-    * required drawing
-    * */
+    /***
+     * required drawing
+     * */
     canvas: null,
     context: null,
     divCanvas: null,
     divContext: null,
+
+    strokes: {
+      type: '',
+      from: {
+        x: 0,
+        y: 0
+      },
+      coordinates: [],
+      color: '',
+      width: '',
+      fill: false,
+      lineCap: '',
+      lineJoin: ''
+    },
+    guides: [],
+    trash: [],
 
     mainImg: require('@/assets/img/board.png'),
     drawMarkArray: [],
@@ -121,16 +142,18 @@ export default {
     verticalSymmetry: 1,
     //=========================================
 
-    /*
-    * stroke
-    * */
-    lineColor: null,
-    lineWidth: null,
+    /***
+     * stroke
+     * */
+    lineColor: '#ff0000',
+    lineWidth: 1,
     //=========================================
 
-    /*
-    * icon list
-    * */
+    /***
+     * icon list
+     * */
+    disable: false,
+    lock: '',
     first: {
       pan: false,
       zoom: false,
@@ -145,8 +168,6 @@ export default {
     },
     third: ['01', '02', '03', '04'],
     //=========================================
-
-
   }),
 
   mounted() {
@@ -232,10 +253,19 @@ export default {
     }
   },
 
-  created() {
-  },
-
   methods: {
+    async handleResize() {
+      this.canvasHeight = this.divCanvas.clientHeight - 2;
+      this.canvasWidth = this.divCanvas.clientWidth - 2;
+      await this.setCanvasTransrateAndScale();
+      setTimeout(() => this.markDraw(), 1);
+    },
+
+    /***
+     * ===============================================================
+     * Set transrate scale
+     * ===============================================================
+     * */
     async setCanvasTransrateAndScale() {
       await this.context.restore();
       await this.context.save();
@@ -272,6 +302,59 @@ export default {
       }
     },
 
+    /***
+     * ===============================================================
+     * Draw
+     * ===============================================================
+     * */
+    startDraw(event) {
+      console.log('t');
+      if (!this.lock) {
+        this.drawing = true;
+        let coordinate = this.getCoordinates(event);
+        console.log(coordinate);
+        this.strokes = {
+          type: this.eraser ? 'eraser' : this.strokeType,
+          from: coordinate,
+          coordinates: [],
+          color: this.lineColor,
+          width: this.lineWidth,
+          // 2
+          fill: this.eraser ||
+          this.strokeType === 'dash' ||
+          this.strokeType === 'line' ||
+          this.strokeType === 'tapeline' ||
+          this.strokeType === 'angle' ||
+          this.strokeType === 'arrow'
+              ? false : this.fillShape,
+          lineCap: this.lineCap,
+          lineJoin: this.lineJoin
+        };
+        this.guides = [];
+      }
+    },
+
+    lineDraw(event) {
+      if (this.drawing) {
+        let coordinate = this.getCoordinates(event);
+
+        if (this.strokeType === 'dash' ||
+            this.strokeType === 'tapeline') {
+          this.strokes.coordinates.push(coordinate);
+          this.drawShape(this.strokes);
+        } else {
+          switch (this.strokeType) {
+            case 'line':
+              this.guides = [{
+                x: coordinate.x,
+                y: coordinate.y
+              }];
+              break;
+          }
+        }
+      }
+    },
+
     markDraw() {
       for (let m of this.drawMarkArray) {
         this.drawShape(m);
@@ -295,13 +378,78 @@ export default {
       this.context.stroke();
     },
 
-    async handleResize() {
-      this.canvasHeight = this.divCanvas.clientHeight - 2;
-      this.canvasWidth = this.divCanvas.clientWidth - 2;
-      await this.setCanvasTransrateAndScale();
-      setTimeout(() => this.markDraw(), 1);
+    stopDraw() {
+      if (this.drawing) {
+        this.strokes.coordinates = this.guides.length > 0 ? this.guides : this.strokes.coordinates;
+        this.drawMarkArray.push(this.strokes);
+        this.drawing = false;
+        this.trash = [];
+      }
     },
 
+    getCoordinates(event) {
+      let x, y;
+      if (event.touches && event.touches.length > 0) {
+        let rect = this.canvas.getBoundingClientRect();
+        x = event.touches[0].clientX - rect.left;
+        y = event.touches[0].clientY - rect.top;
+      } else {
+        x = event.offsetX;
+        y = event.offsetY;
+      }
+      this.x = (x - (this.canvasWidth / 2.0)) / this.reSizeScale;
+      this.y = (y - (this.canvasHeight / 2.0)) / this.reSizeScale;
+      return {
+        x: (x - (this.canvasWidth / 2.0)) / this.reSizeScale,
+        y: (y - (this.canvasHeight / 2.0)) / this.reSizeScale
+      };
+    },
+
+    reset() {
+      if (!this.lock) {
+        this.images = [];
+        this.strokes = {
+          type: '',
+          coordinates: [],
+          color: '',
+          width: '',
+          fill: false,
+          lineCap: '',
+          lineJoin: ''
+        };
+        this.guides = [];
+        this.trash = [];
+        this.redraw(true);
+      }
+    },
+
+    undo() {
+      if (!this.lock) {
+        let strokes = this.images.pop();
+
+        if (strokes) {
+          this.trash.push(strokes);
+          this.redraw(true);
+        }
+      }
+    },
+
+    redo() {
+      if (!this.lock) {
+        let strokes = this.trash.pop();
+
+        if (strokes) {
+          this.images.push(strokes);
+          this.redraw(true);
+        }
+      }
+    },
+
+    /***
+     * ===============================================================
+     * Event
+     * ===============================================================
+     * */
     checkedToggling(idx, name, bool) {
       if (this.disable) {
         if (idx[name] === bool) {
@@ -345,7 +493,6 @@ export default {
       }
     },
 
-    // button click event =====================================================
     // 2-2, 4-1, 4-2, 4-3, 4-3
     async changedEvent(e) {
       if (this.disable) {
@@ -356,7 +503,7 @@ export default {
           else this.inverse = 0;
         } else if (typeof e === 'number') {
           // Change Angle
-          // 4-1, 4-2, 4-3, 4-4
+          // 3-1, 2, 3, 4
           if (e === 0) {
             if (this.angle === 360) this.angle = 0;
             this.angle += 90;
