@@ -21,13 +21,13 @@
           <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
         </div>
         <div>
-          <!--          <input type="color" class="item" v-model="lineColor"/>-->
+          <input type="color" class="item" v-model="lineColor"/>
         </div>
-        <!--        <select class="colorSelect" v-model="lineWidth">
-                  <option v-for="n in 25" :key="n" :value="n">
-                    {{ n }}
-                  </option>
-                </select>-->
+        <select class="colorSelect" v-model="lineWidth">
+          <option v-for="n in 25" :key="n" :value="n">
+            {{ n }}
+          </option>
+        </select>
       </div>
       <div class="line"></div>
 
@@ -88,7 +88,21 @@ export default {
     // pixel * pixel spacing / 25.4 * 96
     realityImageWidth: 0,
     realityImageHeight: 0,
+    //=========================================
 
+    /*
+    * canvas
+    * */
+    imageArr: [],
+    downFlag: false,
+    x: 0,
+    y: 0,
+    preX: 0,
+    preY: 0,
+    image: "",
+    strokeType: "dash",
+    fillShape: false,
+    backgroundImage: null,
 
     /*
     * required drawing
@@ -103,13 +117,16 @@ export default {
     overlaies: null,
     reSizeScale: 0,
     angle: 0,
+    symmetry: 1,
+    verticalSymmetry: 1,
+    //=========================================
 
     /*
     * stroke
     * */
     lineColor: null,
     lineWidth: null,
-
+    //=========================================
 
     /*
     * icon list
@@ -127,18 +144,9 @@ export default {
       draw: false
     },
     third: ['01', '02', '03', '04'],
+    //=========================================
 
-    // canvas
-    imageArr: [],
-    downFlag: false,
-    x: 0,
-    y: 0,
-    preX: 0,
-    preY: 0,
-    image: "",
-    strokeType: "dash",
-    fillShape: false,
-    backgroundImage: null,
+
   }),
 
   mounted() {
@@ -235,20 +243,31 @@ export default {
 
       // 1. 스케일 -> 캔바스 스케일을 높이와 너비 중 짧은 걸 기준으로 맞춤
       await this.context.scale(this.reSizeScale, this.reSizeScale);
+      // 2. Rect 클리어
       await this.context.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
-      // 2. 트랜스레이트 -> 화면의 중앙으로 이동
+
+      // 3. 트랜스레이트 -> 화면의 중앙으로 이동
       await this.context.translate(this.canvasWidth / this.reSizeScale / 2.0, this.canvasHeight / this.reSizeScale / 2.0);
-      // 3. 로테이트 -> 효과 적용
+      // 4. 로테이트 -> 효과 적용
       await this.context.rotate((Math.PI / 180) * this.angle);
-      // 4. 트랜스레이트 -> 화면의 중앙에서 그림 박기 위한 0, 0으로 이동
+      // 5. 트랜스레이트 -> 화면의 중앙에서 그림 박기 위한 0, 0으로 이동
       await this.context.translate(this.realityImageWidth / -2.0, this.realityImageHeight / -2.0);
+      // 6. 상하좌우반전 유무
+      if (this.symmetry === -1) await this.context.translate(this.realityImageWidth, 0);
+      if (this.verticalSymmetry === -1) await this.context.translate(0, this.realityImageHeight);
+      if (this.angle === 0 || this.angle === 180) {
+        await this.context.scale(this.symmetry, this.verticalSymmetry);
+      } else if (this.angle === 90 || this.angle === 270) {
+        await this.context.scale(this.verticalSymmetry, this.symmetry);
+      }
 
       const image = new Image();
       image.src = this.mainImg;
       image.onload = async () => {
+        // 7. 이미지 그리기
         await this.context.drawImage(image, 0, 0, this.realityImageWidth, this.realityImageHeight);
 
-        // 5. 그리기 위해 다시 원점 중앙 이동
+        // 8. 그리기 위해 다시 원점 중앙 이동
         await this.context.translate(this.realityImageWidth / 2.0, this.realityImageHeight / 2.0);
       }
     },
@@ -326,7 +345,7 @@ export default {
       }
     },
 
-    // event
+    // button click event =====================================================
     // 2-2, 4-1, 4-2, 4-3, 4-3
     async changedEvent(e) {
       if (this.disable) {
@@ -338,15 +357,16 @@ export default {
         } else if (typeof e === 'number') {
           // Change Angle
           // 4-1, 4-2, 4-3, 4-4
-          // @click="utilityEvent(i), send({'name' : k, 'state' : i }, [ang, rotX, rotY])"
           if (e === 0) {
+            if (this.angle === 360) this.angle = 0;
             this.angle += 90;
           } else if (e === 1) {
+            if (this.angle === 0) this.angle = 360;
             this.angle -= 90;
           } else if (e === 2) {
-            console.log(2);
+            this.symmetry *= -1;
           } else if (e === 3) {
-            console.log(3);
+            this.verticalSymmetry *= -1;
           }
 
           await this.setCanvasTransrateAndScale();
