@@ -72,6 +72,10 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
       type: String,
       default: () => null
     },
+    watermark: {
+      type: Object,
+      default: () => null
+    },
     saveAs: {
       type: String,
       validator: value => {
@@ -82,6 +86,14 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
     canvasId: {
       type: String,
       default: () => 'VueDrawingCanvas'
+    },
+    initialImage: {
+      type: Array,
+      default: () => []
+    },
+    additionalImages: {
+      type: Array,
+      default: () => []
     },
     outputWidth: {
       type: Number
@@ -117,6 +129,10 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
 
   mounted() {
     this.setContext();
+    this.$nextTick(() => {
+      this.drawInitialImage();
+      this.drawAdditionalImages();
+    });
   },
 
   watch: {
@@ -130,6 +146,23 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
       let canvas = document.querySelector('#' + this.canvasId);
       this.context = this.context ? this.context : canvas.getContext('2d');
       await this.setBackground();
+    },
+
+    drawInitialImage() {
+      if (this.initialImage && this.initialImage.length > 0) {
+        // @ts-ignore
+        this.images = [].concat(this.images, this.initialImage);
+        this.redraw(true);
+      }
+    },
+
+    drawAdditionalImages() {
+      if (this.additionalImages && this.additionalImages.length > 0) {
+        let canvas = document.querySelector('#' + this.canvasId);
+        this.additionalImages.forEach(watermarkObject => {
+          this.drawWatermark(canvas, this.context, watermarkObject);
+        });
+      }
     },
 
     clear() {
@@ -156,56 +189,21 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
           const image = new Image();
           image.src = this.backgroundImage;
           image.onload = () => {
-            this.context.save();
-            console.log('call by drawBackgoundIamge')
-            const pixelspacing = 0.100000001;
-            const dHeight = (image.height * pixelspacing) / 25.4 * 96;
-            const dWidth = (image.width * pixelspacing) / 25.4 * 96;
-
-            this.context.translate(dWidth / -2.0, dHeight / -2.0);
-            this.context.drawImage(image, 0, 0, image.width, image.height, 0, 0, dWidth, dHeight);
-            this.context.translate(dWidth / 2.0, dHeight / 2.0);
-
             // this.context.drawImage(image, 0, 0, Number(this.width), Number(this.height));
-            this.context.restore();
+            this.context.drawImage(image, (this.width -  this.height) / 2, 0, Number(this.height), Number(this.height));
             this.loadedImage = image;
             resolve();
           };
         });
       } else {
-        console.log('call by drawBackgoundIamge2');
-        this.context.save();
-        const cvs = document.getElementById('canvas');
-        const canvasHeight = cvs.clientHeight;
-        const canvasWidth = cvs.clientWidth;
-
-        const pixelspacing = 0.100000001;
-        const dHeight = (this.loadedImage.height * pixelspacing) / 25.4 * 96;
-        const dWidth = (this.loadedImage.width * pixelspacing) / 25.4 * 96;
-
-        const reSizeScale = Math.min(canvasHeight / dHeight, canvasWidth / dWidth);
-        this.context.scale(reSizeScale, reSizeScale);
-        this.context.translate(canvasWidth / reSizeScale / 2.0, canvasHeight / reSizeScale / 2.0);
-        this.context.translate(dWidth / -2.0, dHeight / -2.0);
-        this.context.drawImage(this.loadedImage, 0, 0, this.loadedImage.width, this.loadedImage.height, 0, 0, dWidth, dHeight);
-        this.context.translate(dWidth / 2.0, dHeight / 2.0);
-        this.context.restore();
-
         // this.context.drawImage(this.loadedImage, 0, 0, Number(this.width), Number(this.height));
+        this.context.drawImage(this.loadedImage, (this.width -  this.height) / 2, 0, Number(this.height), Number(this.height));
       }
     },
 
     getCoordinates(event) {
       let x, y;
 
-      const cvs = document.getElementById('canvas');
-      const canvasHeight = cvs.clientHeight;
-      const canvasWidth = cvs.clientWidth;
-      const pixelspacing = 0.100000001;
-      const dHeight = (this.loadedImage.height * pixelspacing) / 25.4 * 96;
-      const dWidth = (this.loadedImage.width * pixelspacing) / 25.4 * 96;
-
-      const reSizeScale = Math.min(canvasHeight / dHeight, canvasWidth / dWidth);
       if (event.touches && event.touches.length > 0) {
         let canvas = document.querySelector('#' + this.canvasId);
         let rect = canvas.getBoundingClientRect();
@@ -215,9 +213,10 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
         x = event.offsetX;
         y = event.offsetY;
       }
+
       return {
-        x: (x - (canvasWidth / 2.0)) / reSizeScale,
-        y: (y - (canvasHeight / 2.0)) / reSizeScale
+        x: x,
+        y: y
       };
     },
 
@@ -259,7 +258,6 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
             this.strokeType === 'tapeline' ||
             this.strokeType === 'angle') {
           this.strokes.coordinates.push(coordinate);
-          console.log('call by draw');
           this.drawShape(this.context, this.strokes, false);
         } else {
           switch (this.strokeType) {
@@ -344,8 +342,34 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
 
               break;
           }
+
+          this.drawGuide(true);
         }
       }
+    },
+
+    drawGuide(closingPath) {
+      this.redraw(true);
+      this.$nextTick(() => {
+        this.context.strokeStyle = this.color;
+        this.context.lineWidth = 1;
+        this.context.lineJoin = this.lineJoin;
+        this.context.lineCap = this.lineCap;
+        this.context.beginPath();
+        this.context.setLineDash([15, 15]);
+        if (this.strokes.type === 'circle') {
+          this.context.ellipse(this.guides[0].x, this.guides[0].y, this.guides[1].x, this.guides[1].y, 0, 0, Math.PI * 2);
+        } else {
+          this.context.moveTo(this.strokes.from.x, this.strokes.from.y);
+          this.guides.forEach(coordinate => {
+            this.context.lineTo(coordinate.x, coordinate.y);
+          });
+          if (closingPath) {
+            this.context.closePath();
+          }
+        }
+        this.context.stroke();
+      });
     },
 
     drawShape(context, strokes, closingPath) {
@@ -368,22 +392,11 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
           context.closePath();
         }
       } else {
-        context.save();
-        const cvs = document.getElementById('canvas');
-        const canvasHeight = cvs.clientHeight;
-        const canvasWidth = cvs.clientWidth;
-
-        const pixelspacing = 0.100000001;
-        const dHeight = (this.loadedImage.height * pixelspacing) / 25.4 * 96;
-        const dWidth = (this.loadedImage.width * pixelspacing) / 25.4 * 96;
-        const reSizeScale = Math.min(canvasHeight / dHeight, canvasWidth / dWidth);
-        context.scale(reSizeScale, reSizeScale);
-        context.translate(canvasWidth / reSizeScale / 2.0, canvasHeight / reSizeScale / 2.0);
         context.moveTo(strokes.from.x, strokes.from.y);
         strokes.coordinates.forEach(stroke => {
           context.lineTo(stroke.x, stroke.y);
 
-          /*if (strokes.type === 'arrow') {
+          if (strokes.type === 'arrow') {
             // 11.22. Arrow Mark
             var aWidth = 5;
             var aLength = 12;
@@ -401,13 +414,11 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
             context.setTransform(1, 0, 0, 1, 0, 0);
             // Arrow Mark ENd
           }
-          */
         });
 
         if (closingPath) {
           context.closePath();
         }
-        context.restore();
       }
 
       if (strokes.fill) {
@@ -471,6 +482,8 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
     async redraw(output) {
       output = typeof output !== 'undefined' ? output : true;
       await this.setBackground().then(() => {
+        this.drawAdditionalImages();
+      }).then(() => {
         let baseCanvas = document.createElement('canvas');
         let baseCanvasContext = baseCanvas.getContext('2d');
         baseCanvas.width = Number(this.width);
@@ -478,8 +491,9 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
 
         if (baseCanvasContext) {
           this.images.forEach(stroke => {
-            baseCanvasContext.globalCompositeOperation = stroke.type === 'eraser' ? 'destination-out' : 'source-over';
-            if (stroke.type !== 'circle' || stroke.type === 'circle' && stroke.coordinates.length > 0) {
+            if (baseCanvasContext) {
+              baseCanvasContext.globalCompositeOperation = stroke.type === 'eraser' ? 'destination-out' : 'source-over';
+              if (stroke.type !== 'circle' || stroke.type === 'circle' && stroke.coordinates.length > 0) {
                 // 4
                 this.drawShape(baseCanvasContext, stroke, stroke.type === 'eraser' ||
                                                                     stroke.type === 'dash' ||
@@ -488,6 +502,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
                                                                     stroke.type === 'angle' ||
                                                                     stroke.type === 'arrow' ? false : true);
               }
+            }
           });
           this.context.drawImage(baseCanvas, 0, 0, Number(this.width), Number(this.height));
         }
@@ -498,21 +513,164 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
       });
     },
 
-    save() {
-      /*let canvas = document.querySelector('#' + this.canvasId);
-      let temp = document.createElement('canvas');
-      let tempCtx = temp.getContext('2d');
-      let tempWidth = this.outputWidth === undefined ? this.width : this.outputWidth;
-      let tempHeight = this.outputHeight === undefined ? this.height : this.outputHeight;
-      temp.width = Number(tempWidth);
-      temp.height = Number(tempHeight);
+    wrapText(context, text, x, y, maxWidth, lineHeight) {
+      const newLineRegex = /(\r\n|\n\r|\n|\r)+/g;
+      const whitespaceRegex = /\s+/g;
+      var lines = text.split(newLineRegex).filter(word => word.length > 0);
 
-      if (tempCtx) {
-        tempCtx.drawImage(canvas, 0, 0, Number(tempWidth), Number(tempHeight));
-        this.$emit('update:image', temp.toDataURL('image/' + this.saveAs, 1));
-        return temp.toDataURL('image/' + this.saveAs, 1);
-      }*/
-      console.log('call by save')
+      for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
+        var words = lines[lineNumber].split(whitespaceRegex).filter(word => word.length > 0);
+        var line = '';
+
+        for (var n = 0; n < words.length; n++) {
+          var testLine = line + words[n] + ' ';
+          var metrics = context.measureText(testLine);
+          var testWidth = metrics.width;
+
+          if (testWidth > maxWidth && n > 0) {
+            if (this.watermark
+                && this.watermark.fontStyle
+                && this.watermark.fontStyle.drawType
+                && this.watermark.fontStyle.drawType === 'stroke') {
+              context.strokeText(line, x, y);
+            } else {
+              context.fillText(line, x, y);
+            }
+
+            line = words[n] + ' ';
+            y += lineHeight;
+          } else {
+            line = testLine;
+          }
+        }
+
+        if (this.watermark
+            && this.watermark.fontStyle
+            && this.watermark.fontStyle.drawType
+            && this.watermark.fontStyle.drawType === 'stroke') {
+          context.strokeText(line, x, y);
+        } else {
+          context.fillText(line, x, y);
+        }
+
+        y += words.length > 0 ? lineHeight : 0;
+      }
+    },
+
+    save() {
+      let canvas = document.querySelector('#' + this.canvasId);
+
+      if (this.watermark) {
+        let temp = document.createElement('canvas');
+        let ctx = temp.getContext('2d');
+
+        if (ctx) {
+          temp.width = Number(this.width);
+          temp.height = Number(this.height);
+          ctx.drawImage(canvas, 0, 0, Number(this.width), Number(this.height));
+          this.drawWatermark(temp, ctx, this.watermark);
+        }
+      } else {
+        let temp = document.createElement('canvas');
+        let tempCtx = temp.getContext('2d');
+        let tempWidth = this.outputWidth === undefined ? this.width : this.outputWidth;
+        let tempHeight = this.outputHeight === undefined ? this.height : this.outputHeight;
+        temp.width = Number(tempWidth);
+        temp.height = Number(tempHeight);
+
+        if (tempCtx) {
+          tempCtx.drawImage(canvas, 0, 0, Number(tempWidth), Number(tempHeight));
+          this.$emit('update:image', temp.toDataURL('image/' + this.saveAs, 1));
+          return temp.toDataURL('image/' + this.saveAs, 1);
+        }
+      }
+    },
+
+    drawWatermark(canvas, ctx, watermark) {
+      if (watermark.type === 'Image') {
+        let imageWidth = watermark.imageStyle ? watermark.imageStyle.width ? watermark.imageStyle.width : Number(this.width) : Number(this.width);
+        let imageHeight = watermark.imageStyle ? watermark.imageStyle.height ? watermark.imageStyle.height : Number(this.height) : Number(this.height);
+        const image = new Image();
+        image.src = watermark.source;
+
+        image.onload = () => {
+          if (watermark && ctx) {
+            ctx.drawImage(image, watermark.x, watermark.y, Number(imageWidth), Number(imageHeight));
+          }
+
+          let temp = document.createElement('canvas');
+          let tempCtx = temp.getContext('2d');
+          let tempWidth = this.outputWidth === undefined ? this.width : this.outputWidth;
+          let tempHeight = this.outputHeight === undefined ? this.height : this.outputHeight;
+          temp.width = Number(tempWidth);
+          temp.height = Number(tempHeight);
+
+          if (tempCtx) {
+            tempCtx.drawImage(canvas, 0, 0, Number(tempWidth), Number(tempHeight));
+            this.$emit('update:image', temp.toDataURL('image/' + this.saveAs, 1));
+            return temp.toDataURL('image/' + this.saveAs, 1);
+          }
+        };
+      } else if (watermark.type === 'Text') {
+        let font = watermark.fontStyle ? watermark.fontStyle.font ? watermark.fontStyle.font : '20px serif' : '20px serif';
+        let align = watermark.fontStyle ? watermark.fontStyle.textAlign ? watermark.fontStyle.textAlign : 'start' : 'start';
+        let baseline = watermark.fontStyle ? watermark.fontStyle.textBaseline ? watermark.fontStyle.textBaseline : 'alphabetic' : 'alphabetic';
+        let color = watermark.fontStyle ? watermark.fontStyle.color ? watermark.fontStyle.color : '#000000' : '#000000';
+        ctx.font = font;
+        ctx.textAlign = align;
+        ctx.textBaseline = baseline;
+
+        if (watermark.fontStyle && watermark.fontStyle.rotate) {
+          let centerX, centerY;
+
+          if (watermark.fontStyle && watermark.fontStyle.width) {
+            centerX = watermark.x + Math.floor(watermark.fontStyle.width / 2);
+          } else {
+            centerX = watermark.x;
+          }
+
+          if (watermark.fontStyle && watermark.fontStyle.lineHeight) {
+            centerY = watermark.y + Math.floor(watermark.fontStyle.lineHeight / 2);
+          } else {
+            centerY = watermark.y;
+          }
+
+          ctx.translate(centerX, centerY);
+          ctx.rotate(watermark.fontStyle.rotate * Math.PI / 180);
+          ctx.translate(centerX * -1, centerY * -1);
+        }
+
+        if (watermark.fontStyle && watermark.fontStyle.drawType && watermark.fontStyle.drawType === 'stroke') {
+          ctx.strokeStyle = watermark.fontStyle.color;
+
+          if (watermark.fontStyle && watermark.fontStyle.width) {
+            this.wrapText(ctx, watermark.source, watermark.x, watermark.y, watermark.fontStyle.width, watermark.fontStyle.lineHeight);
+          } else {
+            ctx.strokeText(watermark.source, watermark.x, watermark.y);
+          }
+        } else {
+          ctx.fillStyle = color;
+
+          if (watermark.fontStyle && watermark.fontStyle.width) {
+            this.wrapText(ctx, watermark.source, watermark.x, watermark.y, watermark.fontStyle.width, watermark.fontStyle.lineHeight);
+          } else {
+            ctx.fillText(watermark.source, watermark.x, watermark.y);
+          }
+        }
+
+        let temp = document.createElement('canvas');
+        let tempCtx = temp.getContext('2d');
+        let tempWidth = this.outputWidth === undefined ? this.width : this.outputWidth;
+        let tempHeight = this.outputHeight === undefined ? this.height : this.outputHeight;
+        temp.width = Number(tempWidth);
+        temp.height = Number(tempHeight);
+
+        if (tempCtx) {
+          tempCtx.drawImage(canvas, 0, 0, Number(tempWidth), Number(tempHeight));
+          this.$emit('update:image', temp.toDataURL('image/' + this.saveAs, 1));
+          return temp.toDataURL('image/' + this.saveAs, 1);
+        }
+      }
     },
 
     isEmpty() {
