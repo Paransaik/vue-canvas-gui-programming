@@ -282,12 +282,24 @@ export default {
       await this.context.rotate((Math.PI / 180) * this.angle);
       // 5. 트랜스레이트 -> 화면의 중앙에서 그림 박기 위한 0, 0으로 이동
       await this.context.translate(this.realityImageWidth / -2.0, this.realityImageHeight / -2.0);
+
       // 6. 상하좌우반전 유무
-      if (this.symmetry === -1) await this.context.translate(this.realityImageWidth, 0);
-      if (this.verticalSymmetry === -1) await this.context.translate(0, this.realityImageHeight);
       if (this.angle === 0 || this.angle === 180) {
+        if (this.symmetry === -1) {
+          await this.context.translate(this.realityImageWidth, 0);
+        }
+        if (this.verticalSymmetry === -1) {
+          await this.context.translate(0, this.realityImageHeight);
+        }
         await this.context.scale(this.symmetry, this.verticalSymmetry);
-      } else if (this.angle === 90 || this.angle === 270) {
+      }
+      else if (this.angle === 90 || this.angle === 270) {
+        if (this.symmetry === -1) {
+          await this.context.translate(0, this.realityImageHeight);
+        }
+        if (this.verticalSymmetry === -1) {
+          await this.context.translate(this.realityImageWidth, 0);
+        }
         await this.context.scale(this.verticalSymmetry, this.symmetry);
       }
 
@@ -296,6 +308,9 @@ export default {
       image.onload = async () => {
         // 7. 이미지 그리기
         await this.context.drawImage(image, 0, 0, this.realityImageWidth, this.realityImageHeight);
+
+        /*if (this.symmetry === -1) await this.context.translate(-this.realityImageWidth, 0);
+        if (this.verticalSymmetry === -1) await this.context.translate(0, -this.realityImageHeight);*/
 
         // 8. 그리기 위해 다시 원점 중앙 이동
         await this.context.translate(this.realityImageWidth / 2.0, this.realityImageHeight / 2.0);
@@ -308,11 +323,9 @@ export default {
      * ===============================================================
      * */
     startDraw(event) {
-      console.log('t');
       if (!this.lock) {
         this.drawing = true;
         let coordinate = this.getCoordinates(event);
-        console.log(coordinate);
         this.strokes = {
           type: this.eraser ? 'eraser' : this.strokeType,
           from: coordinate,
@@ -388,20 +401,22 @@ export default {
     },
 
     getCoordinates(event) {
-      let x, y;
-      if (event.touches && event.touches.length > 0) {
-        let rect = this.canvas.getBoundingClientRect();
-        x = event.touches[0].clientX - rect.left;
-        y = event.touches[0].clientY - rect.top;
-      } else {
-        x = event.offsetX;
-        y = event.offsetY;
-      }
-      this.x = (x - (this.canvasWidth / 2.0)) / this.reSizeScale;
-      this.y = (y - (this.canvasHeight / 2.0)) / this.reSizeScale;
+      this.x = (event.offsetX - (this.canvasWidth / 2.0)) / this.reSizeScale;
+      this.y = (event.offsetY - (this.canvasHeight / 2.0)) / this.reSizeScale;
+      /*const transpose = matrix => {
+        for (let row = 0; row < matrix.length; row++) {
+          for (let column = 0; column < row; column++) {
+            let temp = matrix[row][column]
+            matrix[row][column] = matrix[column][row]
+            matrix[column][row] = temp
+          }
+        }
+        return matrix;
+      }*/
+
       return {
-        x: (x - (this.canvasWidth / 2.0)) / this.reSizeScale,
-        y: (y - (this.canvasHeight / 2.0)) / this.reSizeScale
+        x: this.x,
+        y: this.y
       };
     },
 
@@ -505,8 +520,8 @@ export default {
           // Change Angle
           // 3-1, 2, 3, 4
           if (e === 0) {
-            if (this.angle === 360) this.angle = 0;
             this.angle += 90;
+            if (this.angle === 360) this.angle = 0;
           } else if (e === 1) {
             if (this.angle === 0) this.angle = 360;
             this.angle -= 90;
@@ -517,7 +532,7 @@ export default {
           }
 
           await this.setCanvasTransrateAndScale();
-          setTimeout(() => this.markDraw(), 1);
+          setTimeout(() => this.markDraw(), 10);
         }
       }
     },
@@ -591,7 +606,7 @@ export default {
             stroke.from.y = m.scene_pos['control-points'][0].y / 25.4 * this.DPI;
             m.scene_pos['control-points'].forEach(p => {
               stroke.coordinates.push({x: p.x / 25.4 * this.DPI, y: p.y / 25.4 * this.DPI});
-            })
+            });
             this.drawShape(stroke);
             this.drawMarkArray.push(stroke);
             break;
