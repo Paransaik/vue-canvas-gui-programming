@@ -5,7 +5,7 @@
         <div
             class="item"
             v-for="(v, k) in first" :key="k"
-            @click="checkedToggling(first, k, v), changedStrokeType(k)"
+            @click="checkedButtonToggling(first, k, v), changedStrokeType(k)"
             :class="{isToggle:v && disable}">
           <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
         </div>
@@ -16,7 +16,7 @@
         <div
             class="item"
             v-for="(v, k) in second" :key="k"
-            @click="checkedToggling(second, k, v), changedStrokeType(k), changedEvent(k)"
+            @click="checkedButtonToggling(second, k, v), changedEvent(k), changedStrokeType(k)"
             :class="{isToggle:v && disable}">
           <img :src="require(`@/assets/img/utils/icon-${k}.png`)"/>
         </div>
@@ -42,9 +42,9 @@
       <div class="line"></div>
 
       <div class="itemBox">
-        <button class="item same" @click.prevent="$refs.VueCanvasDrawing.undo()">U</button>
-        <button class="item same" @click.prevent="$refs.VueCanvasDrawing.redo()">R</button>
-        <button class="item same" @click.prevent="save">S</button>
+        <button class="item same" @click="undo">U</button>
+        <button class="item same" @click="redo">R</button>
+        <button class="item same" @click="save">S</button>
         <!-- 회전 초기화-->
         <button class="item same" @click="clearView">View</button>
         <!-- 회전, 그림 초기화-->
@@ -102,9 +102,6 @@ export default {
     downFlag: false,
     x: 0,
     y: 0,
-    preX: 0,
-    preY: 0,
-    image: '',
     strokeType: "dash",
     fillShape: false,
     backgroundImage: null,
@@ -269,21 +266,27 @@ export default {
     async setCanvasTransrateAndScale() {
       await this.context.restore();
       await this.context.save();
-      [this.reSizeScale] = await Promise.all([Math.min(this.canvasWidth / this.realityImageWidth, this.canvasHeight / this.realityImageHeight)]);
-
-      // 1. 스케일 -> 캔바스 스케일을 높이와 너비 중 짧은 걸 기준으로 맞춤
-      await this.context.scale(this.reSizeScale, this.reSizeScale);
-      // 2. Rect 클리어
+      // 1. Rect 클리어
       await this.context.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
 
-      // 3. 트랜스레이트 -> 화면의 중앙으로 이동
+      // 2. 가로/세로 중 reSize 크기 선택
+      if (this.angle === 0 || this.angle === 180) {
+        [this.reSizeScale] = await Promise.all([Math.min(this.canvasWidth / this.realityImageWidth, this.canvasHeight / this.realityImageHeight)]);
+      } else if (this.angle === 90 || this.angle === 270) {
+        [this.reSizeScale] = await Promise.all([Math.min(this.canvasWidth / this.realityImageHeight, this.canvasHeight / this.realityImageWidth)]);
+      }
+
+      // 3. 스케일 -> 캔바스 스케일을 높이와 너비 중 짧은 걸 기준으로 맞춤
+      await this.context.scale(this.reSizeScale, this.reSizeScale);
+
+      // 4. 트랜스레이트 -> 화면의 중앙으로 이동
       await this.context.translate(this.canvasWidth / this.reSizeScale / 2.0, this.canvasHeight / this.reSizeScale / 2.0);
-      // 4. 로테이트 -> 효과 적용
+      // 5. 로테이트 -> 효과 적용
       await this.context.rotate((Math.PI / 180) * this.angle);
-      // 5. 트랜스레이트 -> 화면의 중앙에서 그림 박기 위한 0, 0으로 이동
+      // 6. 트랜스레이트 -> 화면의 중앙에서 그림 박기 위한 0, 0으로 이동
       await this.context.translate(this.realityImageWidth / -2.0, this.realityImageHeight / -2.0);
 
-      // 6. 상하좌우반전 유무
+      // 7. 상하좌우반전 유무
       if (this.angle === 0 || this.angle === 180) {
         if (this.symmetry === -1) {
           await this.context.translate(this.realityImageWidth, 0);
@@ -292,8 +295,7 @@ export default {
           await this.context.translate(0, this.realityImageHeight);
         }
         await this.context.scale(this.symmetry, this.verticalSymmetry);
-      }
-      else if (this.angle === 90 || this.angle === 270) {
+      } else if (this.angle === 90 || this.angle === 270) {
         if (this.symmetry === -1) {
           await this.context.translate(0, this.realityImageHeight);
         }
@@ -306,13 +308,10 @@ export default {
       const image = new Image();
       image.src = this.mainImg;
       image.onload = async () => {
-        // 7. 이미지 그리기
+        // 8. 이미지 그리기
         await this.context.drawImage(image, 0, 0, this.realityImageWidth, this.realityImageHeight);
 
-        /*if (this.symmetry === -1) await this.context.translate(-this.realityImageWidth, 0);
-        if (this.verticalSymmetry === -1) await this.context.translate(0, -this.realityImageHeight);*/
-
-        // 8. 그리기 위해 다시 원점 중앙 이동
+        // 9. 마커 그리기 위해 다시 원점 중앙 이동
         await this.context.translate(this.realityImageWidth / 2.0, this.realityImageHeight / 2.0);
       }
     },
@@ -335,10 +334,8 @@ export default {
           // 2
           fill: this.eraser ||
           this.strokeType === 'dash' ||
-          this.strokeType === 'line' ||
-          this.strokeType === 'tapeline' ||
-          this.strokeType === 'angle' ||
-          this.strokeType === 'arrow'
+          this.strokeType === 'ruler' ||
+          this.strokeType === 'tapeline'
               ? false : this.fillShape,
           lineCap: this.lineCap,
           lineJoin: this.lineJoin
@@ -351,13 +348,18 @@ export default {
       if (this.drawing) {
         let coordinate = this.getCoordinates(event);
 
-        if (this.strokeType === 'dash' ||
-            this.strokeType === 'tapeline') {
+        if (this.strokeType === 'dash') {
           this.strokes.coordinates.push(coordinate);
           this.drawShape(this.strokes);
         } else {
           switch (this.strokeType) {
-            case 'line':
+            case 'ruler':
+              this.guides = [{
+                x: coordinate.x,
+                y: coordinate.y
+              }];
+              break;
+            case 'tapeline':
               this.guides = [{
                 x: coordinate.x,
                 y: coordinate.y
@@ -403,16 +405,20 @@ export default {
     getCoordinates(event) {
       this.x = (event.offsetX - (this.canvasWidth / 2.0)) / this.reSizeScale;
       this.y = (event.offsetY - (this.canvasHeight / 2.0)) / this.reSizeScale;
-      /*const transpose = matrix => {
-        for (let row = 0; row < matrix.length; row++) {
-          for (let column = 0; column < row; column++) {
-            let temp = matrix[row][column]
-            matrix[row][column] = matrix[column][row]
-            matrix[column][row] = temp
-          }
-        }
-        return matrix;
-      }*/
+
+      this.y *= -1;
+      for (let i = 0, cnt = this.angle / 90; i < cnt; i++) {
+        [this.x, this.y] = [-this.y, this.x];
+      }
+      this.y *= -1;
+
+      if (this.angle === 0 || this.angle === 180) {
+        if (this.symmetry === -1) this.x *= -1;
+        if (this.verticalSymmetry === -1) this.y *= -1;
+      } else if (this.angle === 90 || this.angle === 270) {
+        if (this.symmetry === -1) this.y *= -1;
+        if (this.verticalSymmetry === -1) this.x *= -1;
+      }
 
       return {
         x: this.x,
@@ -434,28 +440,30 @@ export default {
         };
         this.guides = [];
         this.trash = [];
-        this.redraw(true);
+        this.markDraw(true);
       }
     },
 
-    undo() {
+    async undo() {
       if (!this.lock) {
-        let strokes = this.images.pop();
+        let strokes = this.drawMarkArray.pop();
 
         if (strokes) {
           this.trash.push(strokes);
-          this.redraw(true);
+          await this.setCanvasTransrateAndScale();
+          setTimeout(() => this.markDraw(), 5);
         }
       }
     },
 
-    redo() {
+    async redo() {
       if (!this.lock) {
         let strokes = this.trash.pop();
 
         if (strokes) {
-          this.images.push(strokes);
-          this.redraw(true);
+          this.drawMarkArray.push(strokes);
+          await this.setCanvasTransrateAndScale();
+          setTimeout(() => this.markDraw(), 5);
         }
       }
     },
@@ -465,7 +473,7 @@ export default {
      * Event
      * ===============================================================
      * */
-    checkedToggling(idx, name, bool) {
+    checkedButtonToggling(idx, name, bool) {
       if (this.disable) {
         if (idx[name] === bool) {
           this.first.pan = false;
@@ -477,21 +485,6 @@ export default {
         }
       }
     },
-    getDistance(arr) {
-      // const rate = this.pW / this.fullHeight;
-      // const pixelSpacing = 0.10000000149011612;
-      let distance = 0;
-      let x = arr[0].x;
-      let y = arr[0].y;
-      arr.forEach(a => {
-        distance += Math.pow(Math.pow(y - a.y, 2) + Math.pow(x - a.x, 2), 0.5);
-        x = a.x;
-        y = a.y;
-      });
-      // Number.EPSILON = 오차없이 나타낼수 있는 가장 작은 양의 수, 부동 소수점 오차를 보정
-      distance = Math.round((distance + Number.EPSILON) * 100) / 100;
-      return distance.toFixed(2);
-    },
 
     // 2-1, 2-3
     changedMouseEvent(e) {
@@ -499,7 +492,7 @@ export default {
         this.lock = this.second.bright;
         this.preX = this.x;
         this.preY = this.y;
-        this.getCoordinate(e);
+        this.getCoordinates(e);
         if (this.preX < this.x || this.preY < this.y) {
           this.brightness += 2;
         } else if (this.preX > this.x || this.preY > this.y) {
@@ -543,15 +536,35 @@ export default {
         if (s === 'zoom') {
           this.lock = false;
         } else if (s === 'ruler') {
-          this.strokeType = 'line';
+          this.strokeType = 'ruler';
+          this.guides = [];
           this.lock = !this.second.ruler;
-        } else if (s === 'draw') {
-          this.strokeType = 'dash';
-          this.lock = !this.second.draw;
-        } else {
-          this.lock = true;
+        } else if (s === 'tapeline') {
+          this.strokeType = 'tapeline';
+          this.guides = [];
+          this.lock = !this.second.tapeline;
         }
+        this.strokeType = 'dash';
+        this.lock = !this.second.draw;
+      } else {
+        this.lock = true;
       }
+    },
+
+    getDistance(arr) {
+      // const rate = this.pW / this.fullHeight;
+      // const pixelSpacing = 0.10000000149011612;
+      let distance = 0;
+      let x = arr[0].x;
+      let y = arr[0].y;
+      arr.forEach(a => {
+        distance += Math.pow(Math.pow(y - a.y, 2) + Math.pow(x - a.x, 2), 0.5);
+        x = a.x;
+        y = a.y;
+      });
+      // Number.EPSILON = 오차없이 나타낼수 있는 가장 작은 양의 수, 부동 소수점 오차를 보정
+      distance = Math.round((distance + Number.EPSILON) * 100) / 100;
+      return distance.toFixed(2);
     },
 
     // 7-1, 7-2
@@ -725,7 +738,7 @@ export default {
     ...mapActions([
       Constant.GET_PATIENTSERIESLIST,
     ]),
-  },
+  }
 }
 </script>
 
