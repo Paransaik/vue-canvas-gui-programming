@@ -44,11 +44,9 @@
       <div class="itemBox">
         <button class="item same" @click="undo">U</button>
         <button class="item same" @click="redo">R</button>
-        <button class="item same" @click="save">S</button>
         <!-- 회전 초기화-->
-        <button class="item same" @click="clearView">View</button>
-        <!-- 회전, 그림 초기화-->
-        <button class="item same" @click="clearView" @click.prevent="$refs.VueCanvasDrawing.reset()">A</button>
+        <button class="item same" @click="reset">S</button>
+        <!--        <button class="item same" @click="save">S</button>-->
         {{ x }} {{ y }}
       </div>
     </div>
@@ -102,7 +100,7 @@ export default {
     downFlag: false,
     x: 0,
     y: 0,
-    strokeType: "dash",
+    strokeType: "freedraw",
     fillShape: false,
     backgroundImage: null,
 
@@ -127,11 +125,11 @@ export default {
       lineCap: '',
       lineJoin: ''
     },
+    drawMarkArray: [],
     guides: [],
     trash: [],
 
     mainImg: require('@/assets/img/board.png'),
-    drawMarkArray: [],
     overlaies: null,
     reSizeScale: 0,
     angle: 0,
@@ -171,9 +169,7 @@ export default {
     window.addEventListener('resize', this.handleResize);
     this.canvas = document.getElementById('canvas');
     this.context = this.canvas.getContext('2d');
-    this.context.font = "10px serif"
-    this.context.textAlign = "start"
-    this.context.textBaseline = "alphabetic";
+
     this.context.save();
 
     this.divCanvas = document.getElementById('divCanvas');
@@ -267,7 +263,7 @@ export default {
       await this.context.restore();
       await this.context.save();
       // 1. Rect 클리어
-      await this.context.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+      this.context.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
 
       // 2. 가로/세로 중 reSize 크기 선택
       if (this.angle === 0 || this.angle === 180) {
@@ -277,32 +273,32 @@ export default {
       }
 
       // 3. 스케일 -> 캔바스 스케일을 높이와 너비 중 짧은 걸 기준으로 맞춤
-      await this.context.scale(this.reSizeScale, this.reSizeScale);
+      this.context.scale(this.reSizeScale, this.reSizeScale);
 
       // 4. 트랜스레이트 -> 화면의 중앙으로 이동
-      await this.context.translate(this.canvasWidth / this.reSizeScale / 2.0, this.canvasHeight / this.reSizeScale / 2.0);
+      this.context.translate(this.canvasWidth / this.reSizeScale / 2.0, this.canvasHeight / this.reSizeScale / 2.0);
       // 5. 로테이트 -> 효과 적용
-      await this.context.rotate((Math.PI / 180) * this.angle);
+      this.context.rotate((Math.PI / 180) * this.angle);
       // 6. 트랜스레이트 -> 화면의 중앙에서 그림 박기 위한 0, 0으로 이동
-      await this.context.translate(this.realityImageWidth / -2.0, this.realityImageHeight / -2.0);
+      this.context.translate(this.realityImageWidth / -2.0, this.realityImageHeight / -2.0);
 
       // 7. 상하좌우반전 유무
       if (this.angle === 0 || this.angle === 180) {
         if (this.symmetry === -1) {
-          await this.context.translate(this.realityImageWidth, 0);
+          this.context.translate(this.realityImageWidth, 0);
         }
         if (this.verticalSymmetry === -1) {
-          await this.context.translate(0, this.realityImageHeight);
+          this.context.translate(0, this.realityImageHeight);
         }
-        await this.context.scale(this.symmetry, this.verticalSymmetry);
+        this.context.scale(this.symmetry, this.verticalSymmetry);
       } else if (this.angle === 90 || this.angle === 270) {
         if (this.symmetry === -1) {
-          await this.context.translate(0, this.realityImageHeight);
+          this.context.translate(0, this.realityImageHeight);
         }
         if (this.verticalSymmetry === -1) {
-          await this.context.translate(this.realityImageWidth, 0);
+          this.context.translate(this.realityImageWidth, 0);
         }
-        await this.context.scale(this.verticalSymmetry, this.symmetry);
+        this.context.scale(this.verticalSymmetry, this.symmetry);
       }
 
       const image = new Image();
@@ -318,7 +314,7 @@ export default {
 
     /***
      * ===============================================================
-     * Draw
+     * freedraw
      * ===============================================================
      * */
     startDraw(event) {
@@ -331,24 +327,21 @@ export default {
           coordinates: [],
           color: this.lineColor,
           width: this.lineWidth,
-          // 2
           fill: this.eraser ||
-          this.strokeType === 'dash' ||
+          this.strokeType === 'freedraw' ||
           this.strokeType === 'ruler' ||
           this.strokeType === 'tapeline'
               ? false : this.fillShape,
           lineCap: this.lineCap,
           lineJoin: this.lineJoin
         };
-        this.guides = [];
       }
     },
 
     lineDraw(event) {
       if (this.drawing) {
         let coordinate = this.getCoordinates(event);
-
-        if (this.strokeType === 'dash') {
+        if (this.strokeType === 'freedraw') {
           this.strokes.coordinates.push(coordinate);
           this.drawShape(this.strokes);
         } else {
@@ -359,13 +352,8 @@ export default {
                 y: coordinate.y
               }];
               break;
-            case 'tapeline':
-              this.guides = [{
-                x: coordinate.x,
-                y: coordinate.y
-              }];
-              break;
           }
+          this.drawGuide();
         }
       }
     },
@@ -374,6 +362,31 @@ export default {
       for (let m of this.drawMarkArray) {
         this.drawShape(m);
       }
+    },
+
+    async drawGuide() {
+      await this.setCanvasTransrateAndScale();
+      setTimeout(() => this.markDraw(), 0);
+
+      /*await this.setCanvasTransrateAndScale().then(() => {
+        this.markDraw();
+      }).then(() => {
+        console.log('completed');
+        /!*this.$nextTick(() => {
+          this.context.strokeStyle = this.color;
+          this.context.lineWidth = this.lineWidth;
+          this.context.lineJoin = this.lineJoin;
+          this.context.lineCap = this.lineCap;
+          this.context.beginPath();
+          this.context.setLineDash([15, 15]);
+          this.context.moveTo(this.strokes.from.x, this.strokes.from.y);
+          this.guides.forEach(coordinate => {
+            this.context.lineTo(coordinate.x, coordinate.y);
+          });
+          this.context.closePath();
+          this.context.stroke();
+        });*!/
+      });*/
     },
 
     drawShape(stroke) {
@@ -390,6 +403,23 @@ export default {
         this.context.lineTo(s.x, s.y);
       });
 
+
+      // 단위 표시
+      if (stroke.coordinates.valueBox) {
+        this.context.fillStyle = "#ffff00";
+        let distance
+        if (stroke.type === 'length') {
+          distance = this.getDistance([{x: stroke.from.x, y: stroke.from.y},
+            {x: stroke.coordinates[0].x, y: stroke.coordinates[0].y}]);
+        } else if (stroke.type === 'tapeline') {
+          distance = this.getDistance(stroke.coordinates);
+        }
+        this.context.font = "10px serif"
+        this.context.textAlign = "center"
+        this.context.textBaseline = "alphabetic";
+        this.context.fillStyle = "#ffff00";
+        this.context.fillText(distance, stroke.coordinates.valueBox.x / 25.4 * this.DPI, stroke.coordinates.valueBox.y / 25.4 * this.DPI);
+      }
       this.context.stroke();
     },
 
@@ -426,9 +456,24 @@ export default {
       };
     },
 
-    reset() {
+    // 4-1, 4-2
+    async reset() {
       if (!this.lock) {
-        this.images = [];
+        this.first.pan = false;
+        this.first.zoom = false;
+
+        this.second.bright = false;
+        this.second.inverse = false;
+        this.second.sharpen = false;
+
+        this.second.ruler = false;
+        this.second.tapeline = false;
+        this.second.draw = false;
+
+        this.scale = 1.0;
+        this.brightness = 100;
+        this.inverse = 0;
+
         this.strokes = {
           type: '',
           coordinates: [],
@@ -438,9 +483,11 @@ export default {
           lineCap: '',
           lineJoin: ''
         };
+
+        this.drawMarkArray = [];
         this.guides = [];
         this.trash = [];
-        this.markDraw(true);
+        await this.setCanvasTransrateAndScale();
       }
     },
 
@@ -487,7 +534,7 @@ export default {
     },
 
     // 2-1, 2-3
-    changedMouseEvent(e) {
+    changedMouseWheelEvent(e) {
       if (this.downFlag && this.second.bright) {
         this.lock = this.second.bright;
         this.preX = this.x;
@@ -532,23 +579,24 @@ export default {
 
     // 2-4, 2-8, 2-9, 3-1
     changedStrokeType(s) {
+      console.log(s);
       if (this.disable) {
         if (s === 'zoom') {
           this.lock = false;
         } else if (s === 'ruler') {
           this.strokeType = 'ruler';
-          this.guides = [];
           this.lock = !this.second.ruler;
         } else if (s === 'tapeline') {
           this.strokeType = 'tapeline';
-          this.guides = [];
           this.lock = !this.second.tapeline;
+        } else if (s === 'draw') {
+          this.strokeType = 'freedraw';
+          this.lock = !this.second.draw;
         }
-        this.strokeType = 'dash';
-        this.lock = !this.second.draw;
-      } else {
-        this.lock = true;
       }
+      /*else {
+        this.lock = true;
+      }*/
     },
 
     getDistance(arr) {
@@ -563,23 +611,8 @@ export default {
         y = a.y;
       });
       // Number.EPSILON = 오차없이 나타낼수 있는 가장 작은 양의 수, 부동 소수점 오차를 보정
-      distance = Math.round((distance + Number.EPSILON) * 100) / 100;
-      return distance.toFixed(2);
-    },
-
-    // 7-1, 7-2
-    clearView() {
-      this.first.pen = false;
-      this.first.zoom = false;
-
-      this.second.bright = false;
-      this.second.inverse = false;
-      this.second.sharpen = false;
-
-      this.scale = 1.0;
-
-      this.brightness = 100;
-      this.inverse = 0;
+      distance = Math.round((distance + Number.EPSILON) * 100) / 100 / this.DPI * 25.4;
+      return distance.toFixed(2) + ' mm';
     },
 
     /***
@@ -590,7 +623,7 @@ export default {
      * arrow        => line       1
      * ellipse      => circle     1
      * rectangle    => square     1
-     * freedraw     => dash       1
+     * freedraw     => freedraw       1
      * */
     // One2 --> Web
     async importOne2Drawing() {
@@ -610,20 +643,44 @@ export default {
           fill: false,
           lineCap: "round",
           lineJoin: "round",
+          valueBox: {
+            x: 0,
+            y: 0,
+          },
         };
-
         switch (m.type) {
           case "freedraw":
-            stroke.type = "dash";
+            stroke.type = "freedraw";
             stroke.from.x = m.scene_pos['control-points'][0].x / 25.4 * this.DPI;
             stroke.from.y = m.scene_pos['control-points'][0].y / 25.4 * this.DPI;
             m.scene_pos['control-points'].forEach(p => {
               stroke.coordinates.push({x: p.x / 25.4 * this.DPI, y: p.y / 25.4 * this.DPI});
             });
-            this.drawShape(stroke);
-            this.drawMarkArray.push(stroke);
+            break;
+          case "length":
+            stroke.type = "length";
+            stroke.from = {x: m.scene_pos.start.x / 25.4 * this.DPI, y: m.scene_pos.start.y / 25.4 * this.DPI}
+            stroke.coordinates.push({
+              x: m.scene_pos.end.x / 25.4 * this.DPI,
+              y: m.scene_pos.end.y / 25.4 * this.DPI
+            });
+            stroke.coordinates.valueBox = m.scene_pos["value-box"]
+            break;
+          case "multi-length":
+            stroke.type = "tapeline";
+            stroke.from.x = m.scene_pos['control-points'][0].x / 25.4 * this.DPI;
+            stroke.from.y = m.scene_pos['control-points'][0].y / 25.4 * this.DPI;
+            m.scene_pos['control-points'].forEach(p => {
+              stroke.coordinates.push({
+                x: p.x / 25.4 * this.DPI,
+                y: p.y / 25.4 * this.DPI
+              });
+            })
+            stroke.coordinates.valueBox = m.scene_pos["value-box"]
             break;
         }
+        this.drawShape(stroke);
+        this.drawMarkArray.push(stroke);
       }
     },
 
@@ -635,7 +692,7 @@ export default {
      * arrow      => arrow          1
      * ellipse    => circle         1
      * rectangle  => square         1
-     * dash       => freedraw       1
+     * freedraw       => freedraw       1
      * */
     // Web --> One2
     getRefImage2Overlayes() {
@@ -648,7 +705,7 @@ export default {
         let dataType;
         let newArr;
         switch (e.type) {
-          case "dash":
+          case "freedraw":
             newArr = e.coordinates.map(c => {
               coordi = this.getWeb2One(c.x, c.y);
               return {x: coordi.x, y: coordi.y};

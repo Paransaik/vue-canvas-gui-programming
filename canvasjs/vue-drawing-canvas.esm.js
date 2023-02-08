@@ -555,7 +555,7 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
           pointerleave: () => this.stopDraw(),
           pointercancel: () => this.stopDraw()
         },
-        ...this.$props
+        ...this.$propsS
       });
     }
 
