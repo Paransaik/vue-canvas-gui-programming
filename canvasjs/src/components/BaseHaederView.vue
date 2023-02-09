@@ -54,7 +54,8 @@
     <div class="baseUtilityView" id="divCanvas">
       <div v-if="patientInfo['LastName']" class="information">
         <p> {{ patientInfo['LastName'] }} {{ patientInfo['FirstName'] }} ({{ patientInfo['ChartID'] }}) </p>
-        만 {{ getUnixToTimestamp(patientInfo['Birthday']['MilliSecondsSinceEpoch'] / 1000) - 1 }} 세, {{ patientInfo['Gender'] === 1 ? '남성' : '여성' }}
+        <p> 만 {{ new Date().getFullYear() - getUnixToTimestamp(patientInfo['Birthday']['MilliSecondsSinceEpoch'] / 1000).substring(0, 4) }} 세, {{ patientInfo['Gender'] === 1 ? '남성' : '여성' }} </p>
+        <p> {{ getUnixToTimestamp(patientInfo['DateTimeUtcLastCapturedSeries'] / 1000) }} </p>
       </div>
       <canvas id="canvas"
               :width="canvasWidth"
@@ -671,13 +672,13 @@ export default {
       const date = new Date(time * 1000);
       console.log()
       const year = date.getFullYear();
-      /*const month = "0" + (date.getMonth() + 1);
+      const month = "0" + (date.getMonth() + 1);
       const day = "0" + date.getDate();
       const hour = "0" + date.getHours();
       const minute = "0" + date.getMinutes();
-      const second = "0" + date.getSeconds();*/
-      // return year + "-" + month.substr(-2) + "-" + day.substr(-2) + " " + hour.substr(-2) + ":" + minute.substr(-2) + ":" + second.substr(-2);
-      return new Date().getFullYear() - year;
+      const second = "0" + date.getSeconds();
+      return year + "-" + month.substr(-2) + "-" + day.substr(-2) + " " + hour.substr(-2) + ":" + minute.substr(-2) + ":" + second.substr(-2);
+      // return new Date().getFullYear() - year;
     },
 
     /***
