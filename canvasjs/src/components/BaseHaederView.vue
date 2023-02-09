@@ -52,6 +52,10 @@
     </div>
 
     <div class="baseUtilityView" id="divCanvas">
+      <div v-if="patientInfo['LastName']" class="information">
+        <p> {{ patientInfo['LastName'] }} {{ patientInfo['FirstName'] }} ({{ patientInfo['ChartID'] }}) </p>
+        만 {{ getUnixToTimestamp(patientInfo['Birthday']['MilliSecondsSinceEpoch'] / 1000) - 1 }} 세, {{ patientInfo['Gender'] === 1 ? '남성' : '여성' }}
+      </div>
       <canvas id="canvas"
               :width="canvasWidth"
               :height="canvasHeight"
@@ -80,6 +84,12 @@ export default {
   components: {},
 
   data: () => ({
+
+    /***
+     * patient info
+     * */
+    patientInfo: {},
+
     /***
      * width, height
      * */
@@ -125,11 +135,13 @@ export default {
       lineCap: '',
       lineJoin: ''
     },
+    lineCount: 0,
     drawMarkArray: [],
     guides: [],
     trash: [],
 
     mainImg: require('@/assets/img/board.png'),
+    tempImage: '',
     overlaies: null,
     reSizeScale: 0,
     angle: 0,
@@ -179,6 +191,7 @@ export default {
 
   computed: {
     ...mapGetters([
+      'patientRecordList',
       'patientSeriesList',
     ]),
   },
@@ -235,6 +248,13 @@ export default {
             overlaies: markCoordinate.data.overlaies,
           })
           this.disable = true;
+
+          await axios({
+            url: drf.patient.getPatientInfo('DD2C442B6B1541BA82AEB90508045177'),
+            method: 'get',
+          }).then(res => {
+            this.patientInfo = res.data.Result;
+          })
 
           this.overlaies = markCoordinate.data.overlaies;
           this.mainImg = blobImage;
@@ -301,14 +321,20 @@ export default {
         this.context.scale(this.verticalSymmetry, this.symmetry);
       }
 
-      const image = new Image();
-      image.src = this.mainImg;
-      image.onload = async () => {
-        // 8. 이미지 그리기
-        await this.context.drawImage(image, 0, 0, this.realityImageWidth, this.realityImageHeight);
-
+      // 8. 이미지 그리기
+      if (this.tempImage) {
+        this.context.drawImage(this.tempImage, 0, 0, this.realityImageWidth, this.realityImageHeight);
         // 9. 마커 그리기 위해 다시 원점 중앙 이동
-        await this.context.translate(this.realityImageWidth / 2.0, this.realityImageHeight / 2.0);
+        this.context.translate(this.realityImageWidth / 2.0, this.realityImageHeight / 2.0);
+      } else {
+        const image = new Image();
+        image.src = this.mainImg;
+        this.tempImage = image;
+        image.onload = async () => {
+          this.context.drawImage(image, 0, 0, this.realityImageWidth, this.realityImageHeight);
+          // 9. 마커 그리기 위해 다시 원점 중앙 이동
+          this.context.translate(this.realityImageWidth / 2.0, this.realityImageHeight / 2.0);
+        }
       }
     },
 
@@ -321,40 +347,43 @@ export default {
       if (!this.lock) {
         this.drawing = true;
         let coordinate = this.getCoordinates(event);
-        this.strokes = {
-          type: this.eraser ? 'eraser' : this.strokeType,
-          from: coordinate,
-          coordinates: [],
-          color: this.lineColor,
-          width: this.lineWidth,
-          fill: this.eraser ||
-          this.strokeType === 'freedraw' ||
-          this.strokeType === 'ruler' ||
-          this.strokeType === 'tapeline'
-              ? false : this.fillShape,
-          lineCap: this.lineCap,
-          lineJoin: this.lineJoin
-        };
+        if (this.strokeType === 'freedraw' || this.lineCount === 0) {
+          this.strokes = {
+            type: this.eraser ? 'eraser' : this.strokeType,
+            from: coordinate,
+            coordinates: [],
+            color: this.lineColor,
+            width: this.lineWidth,
+            fill: this.eraser ||
+            this.strokeType === 'freedraw' ||
+            this.strokeType === 'ruler' ||
+            this.strokeType === 'tapeline'
+                ? false : this.fillShape,
+            lineCap: this.lineCap,
+            lineJoin: this.lineJoin
+          };
+        }
       }
     },
 
     lineDraw(event) {
+      let coordinate = this.getCoordinates(event);
       if (this.drawing) {
-        let coordinate = this.getCoordinates(event);
         if (this.strokeType === 'freedraw') {
           this.strokes.coordinates.push(coordinate);
           this.drawShape(this.strokes);
-        } else {
-          switch (this.strokeType) {
-            case 'ruler':
-              this.guides = [{
-                x: coordinate.x,
-                y: coordinate.y
-              }];
-              break;
-          }
-          this.drawGuide();
         }
+      }
+      if (this.lineCount > 0) {
+        switch (this.strokeType) {
+          case 'ruler':
+            this.guides = [{
+              x: coordinate.x,
+              y: coordinate.y
+            }];
+            break;
+        }
+        this.drawGuide();
       }
     },
 
@@ -366,27 +395,42 @@ export default {
 
     async drawGuide() {
       await this.setCanvasTransrateAndScale();
-      setTimeout(() => this.markDraw(), 0);
+      setTimeout(() => this.markDraw(), 10);
+      this.context.strokeStyle = this.lineColor;
+      this.context.lineWidth = this.lineWidth;
+      this.context.lineJoin = this.lineJoin;
+      this.context.lineCap = this.lineCap;
+      this.context.beginPath();
+      this.context.moveTo(this.strokes.from.x, this.strokes.from.y);
+      this.guides.forEach(coordinate => {
+        this.context.lineTo(coordinate.x, coordinate.y);
+      });
 
-      /*await this.setCanvasTransrateAndScale().then(() => {
-        this.markDraw();
-      }).then(() => {
-        console.log('completed');
-        /!*this.$nextTick(() => {
-          this.context.strokeStyle = this.color;
-          this.context.lineWidth = this.lineWidth;
-          this.context.lineJoin = this.lineJoin;
-          this.context.lineCap = this.lineCap;
-          this.context.beginPath();
-          this.context.setLineDash([15, 15]);
-          this.context.moveTo(this.strokes.from.x, this.strokes.from.y);
-          this.guides.forEach(coordinate => {
-            this.context.lineTo(coordinate.x, coordinate.y);
-          });
-          this.context.closePath();
-          this.context.stroke();
-        });*!/
-      });*/
+      // 단위 표시
+      if (this.strokes.type === 'ruler') {
+        this.context.fillStyle = "#ffff00";
+        let distance = this.getDistance([{x: this.strokes.from.x, y: this.strokes.from.y},
+          {x: this.guides[0].x, y: this.guides[0].y}]);
+        this.context.font = "10px serif"
+        this.context.textAlign = "center"
+        this.context.textBaseline = "alphabetic";
+        this.context.fillStyle = "#ffff00";
+
+        const x1 = Math.abs(this.strokes.from.x),
+            x2 = Math.abs(this.guides[0].x,),
+            y1 = Math.abs(this.strokes.from.y),
+            y2 = Math.abs(this.guides[0].y);
+        this.context.fillText(distance,
+            (Math.max(x1, x2) - Math.min(x1, x2)) / 2 / 25.4 * this.DPI,
+            (Math.max(y1, y2) - Math.min(y1, y2)) / 2 / 25.4 * this.DPI);
+
+        console.log((this.strokes.from.x - this.guides[0].x) / 2 / 25.4 * this.DPI);
+        console.log((this.strokes.from.y - this.guides[0].y) / 2 / 25.4 * this.DPI);
+      }
+
+      this.context.closePath();
+      this.context.stroke();
+
     },
 
     drawShape(stroke) {
@@ -402,7 +446,6 @@ export default {
       stroke.coordinates.forEach(s => {
         this.context.lineTo(s.x, s.y);
       });
-
 
       // 단위 표시
       if (stroke.coordinates.valueBox) {
@@ -426,7 +469,16 @@ export default {
     stopDraw() {
       if (this.drawing) {
         this.strokes.coordinates = this.guides.length > 0 ? this.guides : this.strokes.coordinates;
-        this.drawMarkArray.push(this.strokes);
+        if (this.strokeType === 'ruler') {
+          this.lineCount++;
+        }
+
+        if (this.strokeType === 'freedraw' ||
+            (this.strokeType === 'ruler' && this.lineCount === 2)) {
+          this.drawMarkArray.push(this.strokes);
+          this.lineCount = 0;
+        }
+
         this.drawing = false;
         this.trash = [];
       }
@@ -484,6 +536,8 @@ export default {
           lineJoin: ''
         };
 
+        this.tempImage = '';
+        this.mainImg = require('@/assets/img/board.png');
         this.drawMarkArray = [];
         this.guides = [];
         this.trash = [];
@@ -600,8 +654,6 @@ export default {
     },
 
     getDistance(arr) {
-      // const rate = this.pW / this.fullHeight;
-      // const pixelSpacing = 0.10000000149011612;
       let distance = 0;
       let x = arr[0].x;
       let y = arr[0].y;
@@ -613,6 +665,19 @@ export default {
       // Number.EPSILON = 오차없이 나타낼수 있는 가장 작은 양의 수, 부동 소수점 오차를 보정
       distance = Math.round((distance + Number.EPSILON) * 100) / 100 / this.DPI * 25.4;
       return distance.toFixed(2) + ' mm';
+    },
+
+    getUnixToTimestamp(time) {
+      const date = new Date(time * 1000);
+      console.log()
+      const year = date.getFullYear();
+      /*const month = "0" + (date.getMonth() + 1);
+      const day = "0" + date.getDate();
+      const hour = "0" + date.getHours();
+      const minute = "0" + date.getMinutes();
+      const second = "0" + date.getSeconds();*/
+      // return year + "-" + month.substr(-2) + "-" + day.substr(-2) + " " + hour.substr(-2) + ":" + minute.substr(-2) + ":" + second.substr(-2);
+      return new Date().getFullYear() - year;
     },
 
     /***
@@ -793,6 +858,7 @@ export default {
     },
 
     ...mapActions([
+      Constant.GET_PATIENTRECORDLIST,
       Constant.GET_PATIENTSERIESLIST,
     ]),
   }
@@ -823,6 +889,22 @@ export default {
 
   justify-content: center;
   overflow: hidden;
+}
+
+.information {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+
+  text-shadow: 1px 0 1px #000;
+  font-family: MalgunGothic;
+  font-size: 18px;
+  font-weight: bold;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: 1.22;
+  letter-spacing: -0.64px;
+  color: #fff;
 }
 
 .isToggle {

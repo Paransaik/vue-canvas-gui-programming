@@ -76,6 +76,7 @@ export default createStore({
     },
 
     [Constant.GET_PATIENTRECORDLIST]({ commit }, p_uid) {
+
       axios({
         url: drf.patient.patientRecordList(p_uid),
         method: 'get'

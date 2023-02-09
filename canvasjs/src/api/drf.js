@@ -13,6 +13,8 @@ export default {
     // No index.js
     patientImgFileDownload: (instanceID) => `download_instance/instanceJPG/uid/${instanceID}.1`,
     drawImage: (instanceID) => `download_instance/instance/config/uid/param?uid=${instanceID}.1`,
+    getPatientInfo: (instanceID) => `patient/json/get/uid/${instanceID}`,
+    // DD2C442B6B1541BA82AEB90508045177
 
     // Save drawing marker
     // http://127.0.0.1:16124/oov/svc/native/1.0/upload_instance/instance/config/uid/param?uid=1.2.410.200062.2.1.20221013134141642.12.62098.726.713.1

@@ -500,17 +500,17 @@ var VueDrawingCanvas = /*#__PURE__*/defineComponent({
 
     save() {
       /*let canvas = document.querySelector('#' + this.canvasId);
-      let temp = document.createElement('canvas');
-      let tempCtx = temp.getContext('2d');
+      let tempImage = document.createElement('canvas');
+      let tempCtx = tempImage.getContext('2d');
       let tempWidth = this.outputWidth === undefined ? this.width : this.outputWidth;
       let tempHeight = this.outputHeight === undefined ? this.height : this.outputHeight;
-      temp.width = Number(tempWidth);
-      temp.height = Number(tempHeight);
+      tempImage.width = Number(tempWidth);
+      tempImage.height = Number(tempHeight);
 
       if (tempCtx) {
         tempCtx.drawImage(canvas, 0, 0, Number(tempWidth), Number(tempHeight));
-        this.$emit('update:image', temp.toDataURL('image/' + this.saveAs, 1));
-        return temp.toDataURL('image/' + this.saveAs, 1);
+        this.$emit('update:image', tempImage.toDataURL('image/' + this.saveAs, 1));
+        return tempImage.toDataURL('image/' + this.saveAs, 1);
       }*/
       console.log('call by save')
     },
