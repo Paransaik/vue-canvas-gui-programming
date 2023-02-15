@@ -455,7 +455,6 @@ export default {
       for (let m of this.drawMarkArray) {
         this.drawShape(m);
       }
-
       /*// 10. 마커 그린 후 pan 기능 적용 시 좌표 맞춤
       if (this.angle === 0 || this.angle === 180) {
         this.context.translate(-this.movingLeft, -this.movingTop);
@@ -479,7 +478,7 @@ export default {
         // if (this.verticalSymmetry === -1) {
         //   this.context.translate(this.realityImageWidth, 0);
         // }
-      }*
+      }*/
 
     },
     async drawCircle() {
@@ -597,18 +596,28 @@ export default {
     getCoordinates(event) {
       this.x = (event.offsetX - (this.canvasWidth / 2.0)) / this.reSizeScale;
       this.y = (event.offsetY - (this.canvasHeight / 2.0)) / this.reSizeScale;
-      /*if (this.angle === 0 || this.angle === 180) {
 
-      } else {
-        this.x = (event.offsetX - (this.canvasWidth / 2.0)) / this.reSizeScale;
-        this.y = (event.offsetY - (this.canvasHeight / 2.0)) / this.reSizeScale;
-      }*/
-
+      // 오일러 함수를 이용한 좌표 회전
       this.y *= -1;
       for (let i = 0, cnt = this.angle / 90; i < cnt; i++) {
         [this.x, this.y] = [-this.y, this.x];
       }
       this.y *= -1;
+
+      // panning 기능을 위한 좌표 이동
+      if (this.angle === 0) {
+        this.x += -this.movingLeft;
+        this.y += -this.movingTop;
+      } else if(this.angle === 90){
+        this.x += -this.movingTop;
+        this.y += this.movingLeft;
+      } else if (this.angle === 180) {
+        this.x += this.movingLeft;
+        this.y += this.movingTop;
+      } else {
+        this.x += this.movingTop;
+        this.y += -this.movingLeft;
+      }
 
       if (this.angle === 0 || this.angle === 180) {
         if (this.symmetry === -1) this.x *= -1;
@@ -616,21 +625,6 @@ export default {
       } else if (this.angle === 90 || this.angle === 270) {
         if (this.symmetry === -1) this.y *= -1;
         if (this.verticalSymmetry === -1) this.x *= -1;
-      }
-
-      // console.log(this.movingTop + ' ' + this.movingLeft);
-      if (this.angle === 0) {
-        this.x += -this.movingLeft;
-        this.y += -this.movingTop;
-      } else if(this.angle === 90){
-        this.x += -this.movingLeft;
-        this.y += -this.movingTop;
-      } else if (this.angle === 180) {
-        this.x += this.movingLeft;
-        this.y += this.movingTop;
-      } else {
-        this.x += this.movingLeft;
-        this.y += this.movingTop;
       }
 
       return {
