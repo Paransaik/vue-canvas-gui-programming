@@ -54,17 +54,21 @@
     <div class="baseUtilityView" id="divCanvas">
       <div v-if="patientInfo['LastName']" class="information">
         <p> {{ patientInfo['LastName'] }} {{ patientInfo['FirstName'] }} ({{ patientInfo['ChartID'] }}) </p>
-        <p> 만 {{ new Date().getFullYear() - getUnixToTimestamp(patientInfo['Birthday']['MilliSecondsSinceEpoch'] / 1000).substring(0, 4) }} 세, {{ patientInfo['Gender'] === 1 ? '남성' : '여성' }} </p>
+        <p> 만 {{
+            new Date().getFullYear() - getUnixToTimestamp(patientInfo['Birthday']['MilliSecondsSinceEpoch'] / 1000).substring(0, 4)
+          }} 세, {{ patientInfo['Gender'] === 1 ? '남성' : '여성' }} </p>
         <p> {{ getUnixToTimestamp(patientInfo['DateTimeUtcLastCapturedSeries'] / 1000) }} </p>
       </div>
       <canvas id="canvas"
               :width="canvasWidth"
               :height="canvasHeight"
-              @mousedown="startDraw($event)"
-              @mousemove="lineDraw($event), getCoordinates($event)"
-              @mouseup="stopDraw()"
-              @mouseleave="stopDraw()"
+              @mousedown="startDraw($event), startMoving($event)"
+              @mousemove="lineDraw($event), getCoordinates($event), moveImage($event)"
+              @mouseup="stopDraw(), endMoving()"
+              @mouseleave="stopDraw(), endMoving()"
+              @wheel="changedScale($event)"
       >
+        <!-- wheel event is "Added non-passive event listener to a scroll-blocking 'wheel'"-->
       </canvas>
     </div>
   </div>
@@ -116,6 +120,14 @@ export default {
     backgroundImage: null,
 
     /***
+     * panning
+     * */
+    startTop: 0,
+    startLeft: 0,
+    movingTop: 0,
+    movingLeft: 0,
+
+    /***
      * required drawing
      * */
     canvas: null,
@@ -143,8 +155,10 @@ export default {
 
     mainImg: require('@/assets/img/board.png'),
     tempImage: '',
+    guideTempImage: '',
     overlaies: null,
     reSizeScale: 0,
+    scale: 0.0,
     angle: 0,
     symmetry: 1,
     verticalSymmetry: 1,
@@ -184,7 +198,6 @@ export default {
     this.context = this.canvas.getContext('2d');
 
     this.context.save();
-
     this.divCanvas = document.getElementById('divCanvas');
     this.canvasHeight = this.divCanvas.clientHeight - 2;
     this.canvasWidth = this.divCanvas.clientWidth - 2;
@@ -271,8 +284,48 @@ export default {
     async handleResize() {
       this.canvasHeight = this.divCanvas.clientHeight - 2;
       this.canvasWidth = this.divCanvas.clientWidth - 2;
+      this.movingTop = 0;
+      this.movingLeft = 0;
       await this.setCanvasTransrateAndScale();
       setTimeout(() => this.markDraw(), 1);
+    },
+
+    /***
+     * ===============================================================
+     * panning & scale
+     * ===============================================================
+     * */
+    startMoving(e) {
+      if (this.first.pan && !this.mouseFlag) {
+        this.startTop = e.screenY;
+        this.startLeft = e.screenX;
+        this.mouseFlag = true;
+      }
+    },
+    async moveImage(e) {
+      if (this.first.pan && this.mouseFlag) {
+        this.movingTop += e.screenY - this.startTop;
+        this.startTop = e.screenY;
+        this.movingLeft += e.screenX - this.startLeft;
+        this.startLeft = e.screenX;
+
+        await this.setCanvasTransrateAndScale();
+        setTimeout(() => this.markDraw(), 1);
+      }
+    },
+    endMoving() {
+      if (this.first.pan && this.mouseFlag) {
+        this.mouseFlag = false;
+      }
+    },
+    async changedScale(e) {
+      if (this.first.zoom) {
+        const rate = 0.005;
+        if (e.deltaY > 0) this.scale -= rate;
+        else if (e.deltaY < 0) this.scale += rate;
+        await this.setCanvasTransrateAndScale();
+        setTimeout(() => this.markDraw(), 1);
+      }
     },
 
     /***
@@ -281,8 +334,8 @@ export default {
      * ===============================================================
      * */
     async setCanvasTransrateAndScale() {
-      await this.context.restore();
-      await this.context.save();
+      this.context.restore();
+      this.context.save();
       // 1. Rect 클리어
       this.context.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
 
@@ -292,12 +345,13 @@ export default {
       } else if (this.angle === 90 || this.angle === 270) {
         [this.reSizeScale] = await Promise.all([Math.min(this.canvasWidth / this.realityImageHeight, this.canvasHeight / this.realityImageWidth)]);
       }
+      this.reSizeScale += this.scale;
 
       // 3. 스케일 -> 캔바스 스케일을 높이와 너비 중 짧은 걸 기준으로 맞춤
       this.context.scale(this.reSizeScale, this.reSizeScale);
 
       // 4. 트랜스레이트 -> 화면의 중앙으로 이동
-      this.context.translate(this.canvasWidth / this.reSizeScale / 2.0, this.canvasHeight / this.reSizeScale / 2.0);
+      this.context.translate(this.canvasWidth / this.reSizeScale / 2.0 + this.movingLeft, this.canvasHeight / this.reSizeScale / 2.0 + this.movingTop);
       // 5. 로테이트 -> 효과 적용
       this.context.rotate((Math.PI / 180) * this.angle);
       // 6. 트랜스레이트 -> 화면의 중앙에서 그림 박기 위한 0, 0으로 이동
@@ -327,6 +381,7 @@ export default {
         this.context.drawImage(this.tempImage, 0, 0, this.realityImageWidth, this.realityImageHeight);
         // 9. 마커 그리기 위해 다시 원점 중앙 이동
         this.context.translate(this.realityImageWidth / 2.0, this.realityImageHeight / 2.0);
+        console.log('111111111111');
       } else {
         const image = new Image();
         image.src = this.mainImg;
@@ -335,6 +390,7 @@ export default {
           this.context.drawImage(image, 0, 0, this.realityImageWidth, this.realityImageHeight);
           // 9. 마커 그리기 위해 다시 원점 중앙 이동
           this.context.translate(this.realityImageWidth / 2.0, this.realityImageHeight / 2.0);
+          console.log('2222222222222');
         }
       }
     },
@@ -364,6 +420,12 @@ export default {
             lineJoin: this.lineJoin
           };
         }
+
+        if (this.strokeType === 'ruler') {
+          const image = new Image();
+          image.src = this.canvas.toDataURL('image/png');
+          this.guideTempImage = image;
+        }
       }
     },
 
@@ -384,19 +446,61 @@ export default {
             }];
             break;
         }
+
         this.drawGuide();
       }
     },
 
-    markDraw() {
+    async markDraw() {
       for (let m of this.drawMarkArray) {
         this.drawShape(m);
       }
+
+      /*// 10. 마커 그린 후 pan 기능 적용 시 좌표 맞춤
+      if (this.angle === 0 || this.angle === 180) {
+        this.context.translate(-this.movingLeft, -this.movingTop);
+
+        /!*if (this.symmetry === -1) {
+          this.context.translate(-this.movingLeft, -this.movingTop);
+        }
+        if (this.verticalSymmetry === -1) {
+          this.context.translate(0, this.realityImageHeight);
+        }*!/
+      } else if (this.angle === 90 || this.angle === 270) {
+        console.log(this.angle + ' 22222222222');
+
+        await this.drawCircle();
+        await this.context.translate(-this.movingTop, -this.movingLeft);
+        await this.drawCircle();
+
+        // if (this.symmetry === -1) {
+        //   this.context.translate(0, this.realityImageHeight);
+        // }
+        // if (this.verticalSymmetry === -1) {
+        //   this.context.translate(this.realityImageWidth, 0);
+        // }
+      }*
+
+    },
+    async drawCircle() {
+      this.context.beginPath();
+      this.context.arc(0, 0, 20, 0, 2 * Math.PI);
+      this.context.stroke();
     },
 
     async drawGuide() {
-      await this.setCanvasTransrateAndScale();
-      setTimeout(() => this.markDraw(), 10);
+      this.context.clearRect(this.canvasWidth / this.reSizeScale / -2,
+          this.canvasHeight / this.reSizeScale / -2,
+          this.canvasWidth / this.reSizeScale,
+          this.canvasHeight / this.reSizeScale);
+      this.context.drawImage(this.guideTempImage,
+          this.canvasWidth / this.reSizeScale / -2,
+          this.canvasHeight / this.reSizeScale / -2,
+          this.canvasWidth / this.reSizeScale,
+          this.canvasHeight / this.reSizeScale);
+      console.log(this.canvasWidth);
+      /*await this.setCanvasTransrateAndScale();
+      setTimeout(() => this.markDraw(), 20);*/
       this.context.strokeStyle = this.lineColor;
       this.context.lineWidth = this.lineWidth;
       this.context.lineJoin = this.lineJoin;
@@ -417,13 +521,18 @@ export default {
         this.context.textBaseline = "alphabetic";
         this.context.fillStyle = "#ffff00";
 
-        const x1 = Math.abs(this.strokes.from.x),
-            x2 = Math.abs(this.guides[0].x,),
+        /*const x1 = Math.abs(this.strokes.from.x),
+            x2 = Math.abs(this.guides[0].x),
             y1 = Math.abs(this.strokes.from.y),
-            y2 = Math.abs(this.guides[0].y);
+            y2 = Math.abs(this.guides[0].y);*/
+
+        const x1 = this.strokes.from.x,
+            x2 = this.guides[0].x,
+            y1 = this.strokes.from.y,
+            y2 = this.guides[0].y;
         this.context.fillText(distance,
-            (Math.max(x1, x2) - Math.min(x1, x2)) / 2 / 25.4 * this.DPI,
-            (Math.max(y1, y2) - Math.min(y1, y2)) / 2 / 25.4 * this.DPI);
+            (x1 - x2) / 2 / 25.4 * this.DPI,
+            (y1 - y2) / 2 / 25.4 * this.DPI);
 
         console.log((this.strokes.from.x - this.guides[0].x) / 2 / 25.4 * this.DPI);
         console.log((this.strokes.from.y - this.guides[0].y) / 2 / 25.4 * this.DPI);
@@ -488,6 +597,12 @@ export default {
     getCoordinates(event) {
       this.x = (event.offsetX - (this.canvasWidth / 2.0)) / this.reSizeScale;
       this.y = (event.offsetY - (this.canvasHeight / 2.0)) / this.reSizeScale;
+      /*if (this.angle === 0 || this.angle === 180) {
+
+      } else {
+        this.x = (event.offsetX - (this.canvasWidth / 2.0)) / this.reSizeScale;
+        this.y = (event.offsetY - (this.canvasHeight / 2.0)) / this.reSizeScale;
+      }*/
 
       this.y *= -1;
       for (let i = 0, cnt = this.angle / 90; i < cnt; i++) {
@@ -501,6 +616,21 @@ export default {
       } else if (this.angle === 90 || this.angle === 270) {
         if (this.symmetry === -1) this.y *= -1;
         if (this.verticalSymmetry === -1) this.x *= -1;
+      }
+
+      // console.log(this.movingTop + ' ' + this.movingLeft);
+      if (this.angle === 0) {
+        this.x += -this.movingLeft;
+        this.y += -this.movingTop;
+      } else if(this.angle === 90){
+        this.x += -this.movingLeft;
+        this.y += -this.movingTop;
+      } else if (this.angle === 180) {
+        this.x += this.movingLeft;
+        this.y += this.movingTop;
+      } else {
+        this.x += this.movingLeft;
+        this.y += this.movingTop;
       }
 
       return {
@@ -634,10 +764,11 @@ export default {
 
     // 2-4, 2-8, 2-9, 3-1
     changedStrokeType(s) {
-      console.log(s);
       if (this.disable) {
-        if (s === 'zoom') {
-          this.lock = false;
+        if (s === 'pan') {
+          this.lock = true;
+        } else if (s === 'zoom') {
+          this.lock = true;
         } else if (s === 'ruler') {
           this.strokeType = 'ruler';
           this.lock = !this.second.ruler;
