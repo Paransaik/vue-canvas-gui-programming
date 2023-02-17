@@ -45,8 +45,8 @@
         <button class="item same" @click="undo">U</button>
         <button class="item same" @click="redo">R</button>
         <!-- 회전 초기화-->
-        <button class="item same" @click="reset">S</button>
-        <!--        <button class="item same" @click="save">S</button>-->
+        <button class="item same" @click="reset">RS</button>
+        <button class="item same" @click="save">S</button>
         {{ x }} {{ y }}
       </div>
     </div>
@@ -156,7 +156,7 @@ export default {
     mainImg: require('@/assets/img/board.png'),
     tempImage: '',
     guideTempImage: '',
-    overlaies: null,
+    overlaies: [],
     reSizeScale: 0,
     scale: 0.0,
     angle: 0,
@@ -168,7 +168,7 @@ export default {
      * stroke
      * */
     lineColor: '#ff0000',
-    lineWidth: 1,
+    lineWidth: 2,
     //=========================================
 
     /***
@@ -219,7 +219,6 @@ export default {
         const chartId = this.patientSeriesList.chartId;
         for (let e of this.patientSeriesList.entity) {
           const createdTime = e.Created;
-          // image
           const url = await axios({
             url: drf.patient.patientImgFileDownload(e.UniqueID),
             method: 'get',
@@ -227,7 +226,6 @@ export default {
           })
           const blobImage = URL.createObjectURL(new Blob([url.data], {type: 'image/bmp'}));
           window.onload = function () {
-            console.log(blobImage);
             this.context.drawImage(blobImage, 0, 0, 1000, 1000);
           }
           const markCoordinate = await axios({
@@ -259,18 +257,18 @@ export default {
             // 높이
             pw: this.realityImageHeight,
             // 마커 배열
-            overlaies: markCoordinate.data.overlaies,
+            overlaies: markCoordinate.data === '' ? [] : markCoordinate.data.overlaies,
           })
           this.disable = true;
 
           await axios({
-            url: drf.patient.getPatientInfo('DD2C442B6B1541BA82AEB90508045177'),
+            url: drf.patient.getPatientInfo('4629CF54C49549F59AFBB99D9FC82D8F'),
             method: 'get',
           }).then(res => {
             this.patientInfo = res.data.Result;
           })
 
-          this.overlaies = markCoordinate.data.overlaies;
+          this.overlaies = markCoordinate.data === '' ? [] : markCoordinate.data.overlaies;
           this.mainImg = blobImage;
         }
 
@@ -330,6 +328,12 @@ export default {
 
     /***
      * ===============================================================
+     * brightness, inverse, sharpen
+     * ===============================================================
+     * */
+
+    /***
+     * ===============================================================
      * Set transrate scale
      * ===============================================================
      * */
@@ -379,9 +383,26 @@ export default {
       // 8. 이미지 그리기
       if (this.tempImage) {
         this.context.drawImage(this.tempImage, 0, 0, this.realityImageWidth, this.realityImageHeight);
-        // 9. 마커 그리기 위해 다시 원점 중앙 이동
-        this.context.translate(this.realityImageWidth / 2.0, this.realityImageHeight / 2.0);
-        console.log('111111111111');
+        if (this.second['inverse'] === true) {
+          const imageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
+          // 픽셀 데이터를 반전시킵니다.
+          const data = imageData.data;
+          console.log(data);
+          for (let i = 0; i < data.length; i += 4) {
+            data[i] = 255 - data[i]; // 빨간색
+            data[i + 1] = 255 - data[i + 1]; // 초록색
+            data[i + 2] = 255 - data[i + 2]; // 파란색
+          }
+
+          // 변경된 이미지 데이터를 다시 캔버스에 그립니다.
+          this.context.putImageData(imageData, 0, 0);
+          // 변경된 이미지를 이미지 요소에 설정합니다.
+          // image.src = canvas.toDataURL();
+
+          // 9. 마커 그리기 위해 다시 원점 중앙 이동
+          this.context.translate(this.realityImageWidth / 2.0, this.realityImageHeight / 2.0);
+          console.log('111111111111');
+        }
       } else {
         const image = new Image();
         image.src = this.mainImg;
@@ -455,31 +476,6 @@ export default {
       for (let m of this.drawMarkArray) {
         this.drawShape(m);
       }
-      /*// 10. 마커 그린 후 pan 기능 적용 시 좌표 맞춤
-      if (this.angle === 0 || this.angle === 180) {
-        this.context.translate(-this.movingLeft, -this.movingTop);
-
-        /!*if (this.symmetry === -1) {
-          this.context.translate(-this.movingLeft, -this.movingTop);
-        }
-        if (this.verticalSymmetry === -1) {
-          this.context.translate(0, this.realityImageHeight);
-        }*!/
-      } else if (this.angle === 90 || this.angle === 270) {
-        console.log(this.angle + ' 22222222222');
-
-        await this.drawCircle();
-        await this.context.translate(-this.movingTop, -this.movingLeft);
-        await this.drawCircle();
-
-        // if (this.symmetry === -1) {
-        //   this.context.translate(0, this.realityImageHeight);
-        // }
-        // if (this.verticalSymmetry === -1) {
-        //   this.context.translate(this.realityImageWidth, 0);
-        // }
-      }*/
-
     },
     async drawCircle() {
       this.context.beginPath();
@@ -497,9 +493,9 @@ export default {
           this.canvasHeight / this.reSizeScale / -2,
           this.canvasWidth / this.reSizeScale,
           this.canvasHeight / this.reSizeScale);
-      console.log(this.canvasWidth);
       /*await this.setCanvasTransrateAndScale();
       setTimeout(() => this.markDraw(), 20);*/
+
       this.context.strokeStyle = this.lineColor;
       this.context.lineWidth = this.lineWidth;
       this.context.lineJoin = this.lineJoin;
@@ -525,16 +521,25 @@ export default {
             y1 = Math.abs(this.strokes.from.y),
             y2 = Math.abs(this.guides[0].y);*/
 
-        const x1 = this.strokes.from.x,
-            x2 = this.guides[0].x,
-            y1 = this.strokes.from.y,
-            y2 = this.guides[0].y;
-        this.context.fillText(distance,
-            (x1 - x2) / 2 / 25.4 * this.DPI,
-            (y1 - y2) / 2 / 25.4 * this.DPI);
+        const dx = (this.canvasWidth / this.reSizeScale / 2.0);
+        const dy = (this.canvasHeight / this.reSizeScale / 2.0);
 
-        console.log((this.strokes.from.x - this.guides[0].x) / 2 / 25.4 * this.DPI);
-        console.log((this.strokes.from.y - this.guides[0].y) / 2 / 25.4 * this.DPI);
+        const x1 = dx + this.strokes.from.x,
+            x2 = dx + this.guides[0].x,
+            y1 = dy + this.strokes.from.y,
+            y2 = dy + this.guides[0].y;
+
+        const diffX = Math.abs(x1 - x2) - dx;
+        const diffY = Math.abs(y1 - y2) - dy;
+        // console.log(diffX / 2 / 25.4 * this.DPI);
+        // console.log(diffY / 2 / 25.4 * this.DPI);
+        // console.log(x1, x2, y1, y2);
+        this.context.fillText(distance,
+            diffX / 2 / 25.4 * this.DPI,
+            diffY / 2 / 25.4 * this.DPI);
+
+        /*console.log((this.strokes.from.x - this.guides[0].x) / 2 / 25.4 * this.DPI);
+        console.log((this.strokes.from.y - this.guides[0].y) / 2 / 25.4 * this.DPI);*/
       }
 
       this.context.closePath();
@@ -608,7 +613,7 @@ export default {
       if (this.angle === 0) {
         this.x += -this.movingLeft;
         this.y += -this.movingTop;
-      } else if(this.angle === 90){
+      } else if (this.angle === 90) {
         this.x += -this.movingTop;
         this.y += this.movingLeft;
       } else if (this.angle === 180) {
@@ -731,10 +736,27 @@ export default {
     async changedEvent(e) {
       if (this.disable) {
         if (e === 'inverse') {
-          // Change Inverse
+          console.log(this.second['inverse']);
+          /*// Change Inverse
           // 2-2
-          if (this.second[e] === true) this.inverse = 100;
-          else this.inverse = 0;
+          if (this.second[e] === true) {
+            const imageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
+            console.log(imageData);
+            // 픽셀 데이터를 반전시킵니다.
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+              data[i] = 255 - data[i]; // 빨간색
+              data[i+1] = 255 - data[i+1]; // 초록색
+              data[i+2] = 255 - data[i+2]; // 파란색
+            }
+
+            // 변경된 이미지 데이터를 다시 캔버스에 그립니다.
+            // this.context.putImageData(imageData, 0, 0);
+            // 변경된 이미지를 이미지 요소에 설정합니다.
+            // image.src = canvas.toDataURL();
+          }*/
+          await this.setCanvasTransrateAndScale();
+          setTimeout(() => this.markDraw(), 10);
         } else if (typeof e === 'number') {
           // Change Angle
           // 3-1, 2, 3, 4
@@ -806,6 +828,46 @@ export default {
       // return new Date().getFullYear() - year;
     },
 
+    // (My) Web --> One2
+    async save() {
+      // sharpen, windowing 수정 필요
+      await this.getRefImage2Overlayes();
+      var data = {
+        "manipulate": {"effect": {"invert": this.second.inverse, "sharpen": 0}, "windowing": {"wc": 128, "ww": 256}},
+        "overlaies": this.overlaies
+      }
+      /*var data = {
+        "manipulate": {"effect": {"invert": false, "sharpen": 0}, "windowing": {"wc": 1000, "ww": 4000}},
+        "overlaies": [{
+          "scene_pos": {
+            "end": {"x": 0.21756374261872313, "y": 20.378470558620378},
+            "start": {"x": 0.50764873277702005, "y": -12.038527091569339}
+          },
+          "style": {
+            "brush": {"color": "#00ffffff"},
+            "pen": {"cap": 32, "color": "#ff0000ff", "join": 128, "style": 1, "width": 1}
+          },
+          "transformation": {"rot_deg": 0},
+          "type": "freedraw"
+        }]
+      }*/
+      // const obj = JSON.parse(json);
+      const s = JSON.stringify(data);
+      // console.log(s);
+      axios({
+        // UID: 4629CF54C49549F59AFBB99D9FC82D8F
+        // chartID: 20230216001
+        // SeriesNum: 1.2.410.200062.2.1.20230216142002130.78.60461.178.202
+        url: drf.patient.saveDrwingMarker('1.2.410.200062.2.1.20230216142002130.78.60461.178.202'),
+        method: 'post',
+        data: s
+      })
+      // const link = document.createElement('a');
+      // link.download = 'param'; // filename
+      // link.href = this.image;
+      // link.click();
+    },
+
     /***
      * One2         => Canvas  pen.style
      * length       => line       0
@@ -821,7 +883,8 @@ export default {
       for (const m of this.overlaies) {
         // 선 속성 지정
         this.lineColor = '#' + m.style.pen.color.substring(3, 9);
-        this.lineWidth = m.style.pen.width / this.reSizeScale;
+        this.lineWidth = m.style.pen.width - 1;
+        // this.lineWidth = m.style.pen.width;
         const stroke = {
           type: '',
           from: {
@@ -887,22 +950,22 @@ export default {
      * */
     // Web --> One2
     getRefImage2Overlayes() {
-      this.$refs.VueCanvasDrawing.images.forEach(e => {
-        const data = {"style": {}};
-        let coordi, coordi2;
-        const scene_pos = {};
-        const start = {}, end = {}
-        const value_box = {};
-        let dataType;
-        let newArr;
+      let data = {"style": {}}, scene_pos = {};
+      let start = {}, end = {}, value_box = {};
+      let coordi, dataType, newArr;
+      this.drawMarkArray.forEach(e => {
+        data = {"style": {}};
+        scene_pos = {};
+        start = {}, end = {}
+        value_box = {};
+
         switch (e.type) {
           case "freedraw":
             newArr = e.coordinates.map(c => {
-              coordi = this.getWeb2One(c.x, c.y);
-              return {x: coordi.x, y: coordi.y};
+              return {x: c.x / this.DPI * 25.4, y: c.y / this.DPI * 25.4};
             })
             scene_pos["control-points"] = newArr;
-            data["style"]["brush"] = {"color": "#00ffffff"};
+            data["style"]["brush"] = {"color": "#0000ff00"};
             dataType = "freedraw";
             break;
           case "line":
@@ -926,41 +989,6 @@ export default {
             break;
           case "tapeline":
             break;
-          case "angle":
-            break;
-          case "arrow":
-            coordi = this.getWeb2One(e.from.x, e.from.y);
-            start["x"] = coordi.x;
-            start["y"] = coordi.y;
-            coordi = this.getWeb2One(e.coordinates[0].x, e.coordinates[0].y);
-            end["x"] = coordi.x;
-            end["y"] = coordi.y;
-            scene_pos["start"] = start;
-            scene_pos["end"] = end;
-            data["style"]["brush"] = {"color": "#00ffffff"};
-            dataType = "arrow";
-            break;
-          case "circle":
-            coordi = this.getWeb2One(e.coordinates[0].x - e.coordinates[1].x, e.coordinates[0].y - e.coordinates[1].y);
-            coordi2 = this.getWeb2One(e.coordinates[0].x + e.coordinates[1].x, e.coordinates[0].y + e.coordinates[1].y);
-            scene_pos["bottom"] = coordi2.y;
-            scene_pos["left"] = coordi.x;
-            scene_pos["right"] = coordi2.x;
-            scene_pos["top"] = coordi.y;
-            data["style"]["brush"] = {"color": "#00ffffff"};
-            dataType = "ellipse";
-            break;
-          case "square":
-            // from:: 시작점, left - top
-            coordi = this.getWeb2One(e.coordinates[3].x, e.coordinates[3].y);
-            coordi2 = this.getWeb2One(e.coordinates[1].x, e.coordinates[1].y);
-            scene_pos["bottom"] = coordi2.y;
-            scene_pos["left"] = coordi.x;
-            scene_pos["right"] = coordi2.x;
-            scene_pos["top"] = coordi.y;
-            data["style"]["brush"] = {"color": "#00ffffff"};
-            dataType = "rectangle";
-            break;
         }
 
         if (e.coordinates.length !== 0) {
@@ -972,13 +1000,13 @@ export default {
             "color": '#ff' + e.color.substring(1),
             "join": 128,
             "style": 1,
-            "width": e.width
+            "width": e.width + 1
           };
           // 3. transformation
           data["transformation"] = {"rot_deg": 0};
           // 4. type
           data["type"] = dataType;
-          this.overlayes.push(data);
+          this.overlaies.push(data);
         }
       })
     },
