@@ -11,7 +11,7 @@
     - [Usage](#usage)
         - [Run serve:](#run-serve)
         - [Connect to the server:](#connect-to-the-server)
-    - [Simple Web Prototype Sepcification:](#simple-web-prototype-sepcification)
+    - [Simple Web Viewer Sepcification:](#simple-web-viewer-sepcification)
     - [Function](#function)
         - [Patient Info : 환자 검색 및 선택된 환자의 영상 미리보기](#patient-info--환자-검색-및-선택된-환자의-영상-미리보기)
         - [Pan : 영상의 확대 / 축소](#pan--영상의-확대--축소)
@@ -88,24 +88,23 @@ npm run lint
 
 ---
 
-## Simple Web Prototype Sepcification
+## Implemented Screen
 
-![image](https://user-images.githubusercontent.com/30463982/214742099-fff55eca-93a3-41d7-a235-3ef6aaf22ee2.png)
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/30463982/214742270-7450a703-669b-4604-9f05-9f1ad3aa8327.png" align="center" width="49%">
+  <img src="https://user-images.githubusercontent.com/30463982/214742459-49dc42fd-49aa-478d-b2c6-7ea243b9d57f.png" align="center" width="49%">
+</p>
 
-- 이미지 확대, 축소 기능
-- 이미지 정보 표시
-- 이미지 밝기 조절 —> 마우스 드레그로 명도 조절 가능
-- 이미지 고대비
-- 이미지 Sharpen 기능
-- 3차원 의료 이미지(Dicom file) 실제 거리 측정, 화살표 표시 기능
-- 연속된 선의 길이 측정 기능
-- 두 선 사이의 각도 구하는 기능
-- Text 메모 기능
-- Circle, Rectangle 도형 그리기 기능
-- 선 자유 그리기, 선 색 변경, 굵기 조절 기능
-- 하치조신경 그리는 기능
-- 이미지 회전, 뒤집기
-- 이미지·드로우 Reset, Redo, Undo 기능
+1. 향후 추가 기능 구현을 대비하여 Header, BaseHeader 컴포넌트 방식으로 구현하였습니다.
+2. Header에서 환자 검색을 하여 선택하고 Utility에서영상을 조작한 뒤, MainView에서 영상을 확인할 수 있습니다.
+
+---
+
+## Simple Web Veiwer Sepcification
+
+![image](https://user-images.githubusercontent.com/30463982/219583090-20cb858d-ae06-44fe-9f1f-d20cc1702d2b.png)
+
+**웹 GUI 프로그램** 치과용(DICOM([https://www.dicomstandard.org/](https://www.dicomstandard.org/))) 2D 이미지 웹 뷰어
 
 ---
 
@@ -113,23 +112,51 @@ npm run lint
 
 #### Patient Info : 환자 검색 및 선택된 환자의 영상 미리보기
 
-#### Pan : 영상의 확대 / 축소
+- 환자 검색 시 성명, 차트번호로 자동완성 기능 구현
+- 환자 사진 출력 시 좌측 상단에 이미지(이름, 차트번호, 나이, 성별, 사진 촬영 날짜)에 대한 정보 표시
 
-#### Zoom : 영상 이동 기능
+![1](https://user-images.githubusercontent.com/30463982/219615382-946b97ed-08d7-4a72-bb9b-e3f093b15afc.gif)
 
-[//]: # (#### Info : 영상 정보 확인)
+#### Zoom: 영상 이동 기능
 
-#### Brightness : 선명효과 필터
+- 마우스 좌클릭으로 이미지를 클릭 후 드래그로 사진 이동
 
-#### Inverse : 선명효과 필터
+![3](https://user-images.githubusercontent.com/30463982/219646281-6248c5f0-8801-4337-8bb8-9ff36ad6141f.gif)
 
-#### Sharpen : 선명효과 필터
+#### Pan: 영상의 확대 / 축소
 
-#### Ruler : 두 지점에 대한 길이 측정
+- 마우스 휠로 이미지 확대, 축소 기능
 
-#### Tapeline : 연속 지점에 대한 길이 측정
+![2](https://user-images.githubusercontent.com/30463982/219638566-9445e0ca-a1a7-4b1d-8929-e70f35c7723c.gif)
 
-#### Freedraw : 연속 지점에 대한 길이 측정
+#### Brightness: 밝기 조절 필터
+
+- 이미지 밝기 조절 —> 마우스 드레그로 명도 조절 가능
+
+#### Inverse: 이미지 반전 필터
+
+- 바이트 코드로 읽어 rgb 값을 반전시킨 후 다시 그림
+
+![4](https://user-images.githubusercontent.com/30463982/219645542-60a2d427-e7d8-485b-a31d-2d01a8509d19.gif)
+
+#### Sharpen: 선명효과 필터
+
+- 이미지 Sharpen 기능
+
+#### Ruler: 두 지점에 대한 길이 측정
+
+- [3차원 의료 이미지(Dicom file) 실제 거리(pixel -> mm) 측정](https://blog.naver.com/set_star/223000120552)
+
+
+![5](https://user-images.githubusercontent.com/30463982/219645744-52515fe0-30d9-4c7d-ad87-c239e4eaabc0.gif)
+
+#### Tapeline: 연속 지점에 대한 길이 측정
+
+#### Freedraw: 연속 지점에 대한 길이 측정
+
+- 선 자유 그리기, 선 색 변경, 굵기 조절 기능
+
+![6](https://user-images.githubusercontent.com/30463982/219646142-087d7203-31cc-4bd0-a81e-8960941f89d8.gif)
 
 [//]: # (#### Angle : 각도 측정)
 
@@ -141,20 +168,15 @@ npm run lint
 
 [//]: # (#### Draw Nerve : 입력 포인트에 의한 신경관 라인 생성)
 
-#### Rotation : 영상을 원하는 방향으로 돌리기
+#### Rotation: 영상을 원하는 방향으로 돌리기
 
-[//]: # (#### Insert implant : 치식 번호 및 Fixture 정보 선택 후 임플란트 식립)
+- 이미지 회전, 뒤집기
 
-[//]: # (#### Capture : 원하는 크기로 영상 capture)
+![8](https://user-images.githubusercontent.com/30463982/219646131-4e8d7d0d-ed5c-42a5-b71d-3bd7a3995040.gif)
 
----
+#### Undo, Redo: 그린 마커 지우기, 다시 그리기
 
-## Implemented Screen
+![7](https://user-images.githubusercontent.com/30463982/219646140-b9609235-e780-48d0-9f2e-db6732baa15a.gif)
 
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/30463982/214742270-7450a703-669b-4604-9f05-9f1ad3aa8327.png" align="center" width="49%">
-  <img src="https://user-images.githubusercontent.com/30463982/214742459-49dc42fd-49aa-478d-b2c6-7ea243b9d57f.png" align="center" width="49%">
-</p>
 
-1. 향후 추가 기능 구현을 대비하여 Header, BaseHeader 컴포넌트 방식으로 구현하였습니다.
-2. Header에서 환자 검색을 하여 선택하고 Utility에서영상을 조작한 뒤, MainView에서 영상을 확인할 수 있습니다.
+

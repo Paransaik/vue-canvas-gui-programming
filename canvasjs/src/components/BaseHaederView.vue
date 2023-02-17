@@ -47,7 +47,7 @@
         <!-- 회전 초기화-->
         <button class="item same" @click="reset">RS</button>
         <button class="item same" @click="save">S</button>
-        {{ x }} {{ y }}
+<!--        {{ x }} {{ y }}-->
       </div>
     </div>
 
@@ -89,7 +89,6 @@ export default {
   components: {},
 
   data: () => ({
-
     /***
      * patient info
      * */
@@ -398,11 +397,10 @@ export default {
           this.context.putImageData(imageData, 0, 0);
           // 변경된 이미지를 이미지 요소에 설정합니다.
           // image.src = canvas.toDataURL();
-
-          // 9. 마커 그리기 위해 다시 원점 중앙 이동
-          this.context.translate(this.realityImageWidth / 2.0, this.realityImageHeight / 2.0);
-          console.log('111111111111');
         }
+        // 9. 마커 그리기 위해 다시 원점 중앙 이동
+        this.context.translate(this.realityImageWidth / 2.0, this.realityImageHeight / 2.0);
+        console.log('111111111111');
       } else {
         const image = new Image();
         image.src = this.mainImg;
@@ -667,7 +665,7 @@ export default {
         };
 
         this.tempImage = '';
-        this.mainImg = require('@/assets/img/board.png');
+        // this.mainImg = require('@/assets/img/board.png');
         this.drawMarkArray = [];
         this.guides = [];
         this.trash = [];
@@ -1033,8 +1031,8 @@ export default {
 
 .baseUtilityView {
   /* debug용 */
-  background-color: orange;
-  /*background-color: black;*/
+  /*background-color: orange;*/
+  background-color: black;
   height: 100%;
   width: 100%;
   position: relative;
