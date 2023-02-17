@@ -4,33 +4,30 @@
 
 # Web-GUI-Programing
 
+**웹 GUI 프로그램** 치과용(DICOM([https://www.dicomstandard.org/](https://www.dicomstandard.org/))) 2D 이미지 웹 뷰어
+
+![full](https://user-images.githubusercontent.com/30463982/219650504-7558e9f4-a72b-467f-b7d7-93c2e76882e4.gif)
+
 - [Web-GUI-Programing](#web-gui-programing)
-    - [Description](#description)
     - [Summary](#summary)
     - [Installation](#installation)
     - [Usage](#usage)
         - [Run serve:](#run-serve)
         - [Connect to the server:](#connect-to-the-server)
+    - [Implemented Screen](#implemented-screen)
     - [Simple Web Viewer Sepcification:](#simple-web-viewer-sepcification)
     - [Function](#function)
-        - [Patient Info : 환자 검색 및 선택된 환자의 영상 미리보기](#patient-info--환자-검색-및-선택된-환자의-영상-미리보기)
-        - [Pan : 영상의 확대 / 축소](#pan--영상의-확대--축소)
-        - [Zoom : 영상 이동 기능](#zoom--영상-이동-기능)
-        - [Info : 영상 정보 확인](#info--영상-정보-확인)
-        - [Sharpen : 선명효과 필터](#sharpen--선명효과-필터)
-        - [Ruler : 두 지점에 대한 길이 측정](#ruler--두-지점에-대한-길이-측정)
-        - [Tapeline : 연속 지점에 대한 길이 측정](#tapeline--연속-지점에-대한-길이-측정)
-        - [Angle : 각도 측정](#angle--각도-측정)
-        - [Arrow : 화살표 표시](#arrow--화살표-표시)
-        - [Draw Nerve : 입력 포인트에 의한 신경관 라인 생성](#draw-nerve--입력-포인트에-의한-신경관-라인-생성)
-        - [Rotation : 영상을 원하는 방향으로 돌리기](#rotation--영상을-원하는-방향으로-돌리기)
-        - [Insert implant : 치식 번호 및 Fixture 정보 선택 후 임플란트 식립](#insert-implant--치식-번호-및-fixture-정보-선택-후-임플란트-식립)
-        - [Capture : 원하는 크기로 영상 capture](#capture--원하는-크기로-영상-capture)
-    - [Implemented Screen](#implemented-screen)
-
-## Description
-
-**웹 GUI 프로그램** 치과용(DICOM([https://www.dicomstandard.org/](https://www.dicomstandard.org/))) 2D 이미지 웹 뷰어
+        - [Patient Info: 환자 검색 및 선택된 환자의 영상 미리보기](#patient-info--환자-검색-및-선택된-환자의-영상-미리보기)
+        - [Pan: 영상의 확대 / 축소](#pan--영상의-확대--축소)
+        - [Zoom: 영상 이동 기능](#zoom--영상-이동-기능)
+        - [Brightness: 밝기 조절 필터](#brightness--밝기-조절-필터)
+        - [Inverse: 이미지 반전 필터](#inverse--이미지-반전-필터)
+        - [Sharpen: 선명효과 필터](#sharpen--선명효과-필터)
+        - [Ruler: 두 지점에 대한 길이 측정](#ruler--두-지점에-대한-길이-측정)
+        - [Tapeline: 연속 지점에 대한 길이 측정](#tapeline--연속-지점에-대한-길이-측정)
+        - [Freedraw: 자유롭게 선 그리기](#freedraw--자유롭게-선-그리기)
+        - [Rotation: 영상을 원하는 방향으로 돌리기](#rotation--영상을-원하는-방향으로-돌리기)
+    - [Ref](#ref)
 
 ## Summary
 
@@ -102,7 +99,7 @@ npm run lint
 
 ## Simple Web Veiwer Sepcification
 
-![image](https://user-images.githubusercontent.com/30463982/219583090-20cb858d-ae06-44fe-9f1f-d20cc1702d2b.png)
+![image](https://user-images.githubusercontent.com/30463982/219648653-0f717550-c721-4775-9d7c-5ca2546a6124.png)
 
 **웹 GUI 프로그램** 치과용(DICOM([https://www.dicomstandard.org/](https://www.dicomstandard.org/))) 2D 이미지 웹 뷰어
 
@@ -117,17 +114,17 @@ npm run lint
 
 ![1](https://user-images.githubusercontent.com/30463982/219615382-946b97ed-08d7-4a72-bb9b-e3f093b15afc.gif)
 
-#### Zoom: 영상 이동 기능
-
-- 마우스 좌클릭으로 이미지를 클릭 후 드래그로 사진 이동
-
-![3](https://user-images.githubusercontent.com/30463982/219646281-6248c5f0-8801-4337-8bb8-9ff36ad6141f.gif)
-
 #### Pan: 영상의 확대 / 축소
 
 - 마우스 휠로 이미지 확대, 축소 기능
 
 ![2](https://user-images.githubusercontent.com/30463982/219638566-9445e0ca-a1a7-4b1d-8929-e70f35c7723c.gif)
+
+#### Zoom: 영상 이동 기능
+
+- 마우스 좌클릭으로 이미지를 클릭 후 드래그로 사진 이동
+
+![3](https://user-images.githubusercontent.com/30463982/219646281-6248c5f0-8801-4337-8bb8-9ff36ad6141f.gif)
 
 #### Brightness: 밝기 조절 필터
 
@@ -145,28 +142,17 @@ npm run lint
 
 #### Ruler: 두 지점에 대한 길이 측정
 
-- [3차원 의료 이미지(Dicom file) 실제 거리(pixel -> mm) 측정](https://blog.naver.com/set_star/223000120552)
-
+- DPI를 적용시켜 3차원 의료 이미지(Dicom image file) 실제 거리로 변환(pixel -> mm)
 
 ![5](https://user-images.githubusercontent.com/30463982/219645744-52515fe0-30d9-4c7d-ad87-c239e4eaabc0.gif)
 
 #### Tapeline: 연속 지점에 대한 길이 측정
 
-#### Freedraw: 연속 지점에 대한 길이 측정
+#### Freedraw: 자유롭게 선 그리기
 
-- 선 자유 그리기, 선 색 변경, 굵기 조절 기능
+- 선 색상 변경, 굵기(1~20) 조절
 
 ![6](https://user-images.githubusercontent.com/30463982/219646142-087d7203-31cc-4bd0-a81e-8960941f89d8.gif)
-
-[//]: # (#### Angle : 각도 측정)
-
-[//]: # ()
-
-[//]: # (#### Arrow : 화살표 표시)
-
-[//]: # ()
-
-[//]: # (#### Draw Nerve : 입력 포인트에 의한 신경관 라인 생성)
 
 #### Rotation: 영상을 원하는 방향으로 돌리기
 
@@ -178,5 +164,9 @@ npm run lint
 
 ![7](https://user-images.githubusercontent.com/30463982/219646140-b9609235-e780-48d0-9f2e-db6732baa15a.gif)
 
+---
 
-
+## Ref
+1. [두선분 사이의 각도 구하기](https://blog.naver.com/set_star/222963006080)
+2. [반응형 페이지에 맞게 이미지 크기 실시간 Resize](https://blog.naver.com/set_star/222974450446)
+3. [거리 측정 시 실제 길이 표시(DPI)](https://blog.naver.com/set_star/223000120552)
