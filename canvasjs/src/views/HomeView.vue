@@ -1,24 +1,25 @@
 <template style="height: 100%">
   <div class="homeContainer">
-    <HaederView/>
-    <BaseHaederView/>
-    <!-- cursor event -->
-    <!-- <div id="cursor" :style="cursorPoint"></div> -->
+    <HeaderView />
+    <BaseHeaderView />
+    <!-- <router-view/> -->
   </div>
+  <!--  -->
+  <!-- cursor event -->
+  <!-- <div id="cursor" :style="cursorPoint"></div> -->
 </template>
 
 <script>
-// @ is an alias to /src
-import HaederView from '@/components//HaederView.vue';
-import BaseHaederView from '@/components/BaseHaederView.vue';
+import HeaderView from '@/components/HaederView.vue';
+import BaseHeaderView from '@/components/BaseHaederView.vue';
 
 export default {
   name: 'HomeView',
 
   components: {
-    HaederView,
-    BaseHaederView,
-  }
+    HeaderView,
+    BaseHeaderView,
+  },
   /*data() {
     return {
       x: 0,
@@ -49,6 +50,7 @@ export default {
   height: 100%;
   flex-direction: column;
 }
+
 /* cursor event */
 /*#cursor {
   position: fixed;

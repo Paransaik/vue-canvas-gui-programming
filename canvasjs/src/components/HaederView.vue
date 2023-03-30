@@ -1,41 +1,34 @@
 <template>
-  <div class="headerView">
+  <div class="haederView">
     <section class="section">
       <div class="searchBar">
-        <input
-            list="patientUid"
-            type="text"
-            class="searchInput"
-            placeholder="Input patient Info"
-            @change="getPatientSeriesList"
-        >
+        <input list="patientUid" type="text" class="searchInput" placeholder="Input patient Info"
+          @change="getPatientSeriesList">
         <datalist id="patientUid">
-          <option
-              class="searchOption"
-              v-for="aPL in allPatientList"
-              :key="aPL"
-              :value="aPL.ChartID"
-          >{{ `${aPL.LastName} ${aPL.MiddleName} ${aPL.FirstName}` }}
+          <option class="searchOption" v-for="aPL in allPatientList" :key="aPL" :value="aPL.ChartID">{{ `${aPL.LastName}
+                      ${aPL.MiddleName} ${aPL.FirstName}` }}
           </option>
         </datalist>
         <!-- ================================ -->
       </div>
       <div class="haeaderStatusBar">
         <div>ㅡ</div>
-        <div><input type="button" value="Download"></div>
+        <div><input type="button" value="Download" @click="showImage"></div>
       </div>
     </section>
   </div>
 </template>
 
 <script>
-import {mapGetters, mapActions} from 'vuex';
+import { mapGetters, mapActions } from 'vuex';
 import Constant from "@/common/Constant";
 
 export default {
-  name: 'HeaderView',
+  name: 'HaederView',
 
-  data: () => ({}),
+  data: () => ({
+    oneServerPath: 'C:\\OSSTEM\\OneServer\\repository\\instance\\'
+  }),
 
   components: {},
 
@@ -46,7 +39,6 @@ export default {
       'patientRecordList',
       'patientRecordFilenameList',
     ]),
-
   },
 
   watch: {},
@@ -56,15 +48,25 @@ export default {
   },
 
   methods: {
-    ...mapActions([
-      Constant.GET_ALLPATIENTLIST,
-      Constant.GET_PATIENTNAME,
-      Constant.GET_PATIENTSERIESLIST,
-      Constant.GET_PATIENTRECORDLIST,
-      Constant.GET_PATIENTRECORDFILENAMELIST,
-    ]),
-  }
+    showImage()  {
+      let newArr = []
+      // console.log(document.querySelectorAll('.checkboxs'));
+      for (const e of document.querySelectorAll('.checkboxs')) {
+        // console.log(e.parentNode.nextSibling.nextSibling.childNodes[0].getAttribute('src'));
+        // url = e.parentNode.nextSibling.nextSibling.childNodes[0].getAttribute('src');
+        if (e.checked) newArr.push(e.parentNode.nextSibling.nextSibling.childNodes);
+      }
+      console.log(newArr);
+    },
 
+  ...mapActions([
+    Constant.GET_ALLPATIENTLIST,
+    Constant.GET_PATIENTNAME,
+    Constant.GET_PATIENTSERIESLIST,
+    Constant.GET_PATIENTRECORDLIST,
+    Constant.GET_PATIENTRECORDFILENAMELIST,
+  ]),
+}
 
 }
 </script>

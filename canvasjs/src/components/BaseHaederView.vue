@@ -1,7 +1,7 @@
 <template>
   <div class="baseHeaderView">
       <ImageListView />
-      <FolderPathView />
+      <!-- <router-view name="image"/> -->
   </div>
 </template>
 
@@ -13,13 +13,15 @@
 // import drf from '@/api/drf';
 import {mapGetters, mapActions} from 'vuex';
 import Constant from "@/common/Constant.js";
-import ImageListView from './ImageListView.vue';
-import FolderPathView from './FolderPathView.vue';
+import ImageListView from '@/components/ImageListView.vue'
 
 export default {
   name: 'BaseUtilityView',
 
-  components: { ImageListView, FolderPathView },
+  components: { 
+    ImageListView,
+    
+  },
 
   data: () => ({
     /***

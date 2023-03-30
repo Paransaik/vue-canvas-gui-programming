@@ -4,11 +4,13 @@
             <th>-</th>
             <th>목차</th>
             <th>이미지</th>
+            <th>이동</th>
         </tr>
         <tr v-for="(item, index) in imageArr" :key="item">
-            <td><label><input type="checkbox" class=""/></label></td>
+            <td><input type="checkbox" class="checkboxs" /></td>
             <td><span v-html="index + 1"></span></td>
             <td><img :src="item" class="img"></td>
+            <td><router-link to="/canvas" >이동</router-link></td>
         </tr>
     </table>
 </template>
@@ -46,6 +48,7 @@ export default {
             deep: true,
             async handler() {
                 for (let e of this.patientSeriesList.entity) {
+                    // console.log(e);
                     const url = await axios({
                         url: drf.patient.patientImgFileDownload(e.UniqueID),
                         method: 'get',
@@ -53,7 +56,7 @@ export default {
                     })
                     const blobImage = URL.createObjectURL(new Blob([url.data], { type: 'image/bmp' }));
                     this.imageArr.push(blobImage);
-                    console.log(blobImage);
+                    // console.log(blobImage);
                     // window.onload = function () {
                     //   this.context.drawImage(blobImage, 0, 0, 1000, 1000);
                     // }
@@ -121,24 +124,24 @@ export default {
 }
 
 table {
-    text-align : left;
+    text-align: left;
 }
 
-table th{
+table th {
     /* padding : 12px; */
-    border-bottom: 2px solid  darkgray;
+    border-bottom: 2px solid darkgray;
 }
 
-table td{
-    padding : 1px;
+table td {
+    padding: 1px;
 }
 
-table tr:nth-of-type(even){
+table tr:nth-of-type(even) {
     background-color: #eaeff3;
 }
 
 .img {
     height: 65px;
-    width: 100px; 
+    width: 100px;
 }
 </style>

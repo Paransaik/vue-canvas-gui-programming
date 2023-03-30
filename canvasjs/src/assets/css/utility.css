@@ -1,0 +1,47 @@
+.utilityView {
+    /*min-width: 56px;*/
+    max-width: 56px;
+    height: 100%;
+    padding: 8px;
+    background-color: #eaeff3;
+}
+
+.line {
+    width: 37px;
+    height: 1px;
+    margin: 5px 3px 5px 1.5px;
+    border: solid 1px #cdd2d9;
+}
+
+.itemBox {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.item {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    border: solid 1px #b9bfcc;
+    background-color: #fff;
+    margin: 3px 0 0 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.colorSelect {
+    width: 32px;
+    height: 32px;
+    margin: 3px 0 0 4px;
+    padding: 2px 6px 5px 0;
+    border-radius: 4px;
+    border: solid 1px #b9bfcc;
+    background-color: #fff;
+}
+
+.isToggle {
+    background-color: #123e72;
+}
