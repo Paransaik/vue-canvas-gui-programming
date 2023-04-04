@@ -7,9 +7,10 @@ const routes = [
     component: () => import('@/views/HomeView.vue'),
   },
   {
-    path: '/canvas',
-    name: 'canvas',
+    path: '/canvas/:image',
+    name: 'CanvasView',
     component: () => import('@/components/CanvasView.vue'),
+    props: true,
   },
   {
     path: '/image',

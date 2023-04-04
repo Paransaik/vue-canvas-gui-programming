@@ -76,13 +76,25 @@
 
 <script>
 import '@/assets/css/utility.css';
-import {xmlToJson} from '@/assets/js/x2j.js';
+// import {xmlToJson} from '@/assets/js/x2j.js';
 import axios from "axios";
 import drf from '@/api/drf';
 import {mapGetters, mapActions} from 'vuex';
 import Constant from "@/common/Constant.js";
 export default {
   name: 'CanvasView',
+  props: {
+    image: {
+      type: String,
+      default : ""
+    },
+  },
+
+  created() {
+    this.mainImg = this.image;
+    console.log(this.mainImg)
+  },
+
   components: {},
   data: () => ({
     /***
@@ -195,7 +207,7 @@ export default {
   watch: {
     patientSeriesList: {
       deep: true,
-      async handler() {
+      /*async handler() {
         this.imageArr = [];
         const chartId = this.patientSeriesList.chartId;
         for (let e of this.patientSeriesList.entity) {
@@ -250,7 +262,7 @@ export default {
         }
         await this.setCanvasTransrateAndScale();
         setTimeout(() => this.importOne2Drawing(), 10);
-      }
+      }*/
     }
   },
   methods: {
