@@ -117,17 +117,17 @@ npm run lint
 
 #### Pan :
 
-- 영상의 확대 / 축소
-    - 마우스 휠로 이미지 확대, 축소 기능
-
-![2](https://user-images.githubusercontent.com/30463982/219638566-9445e0ca-a1a7-4b1d-8929-e70f35c7723c.gif)
-
-#### Zoom :
-
 - 영상 이동 기능
     - 마우스 좌클릭으로 이미지를 클릭 후 드래그로 사진 이동
 
 ![3](https://user-images.githubusercontent.com/30463982/219646281-6248c5f0-8801-4337-8bb8-9ff36ad6141f.gif)
+
+#### Zoom :
+
+- 영상의 확대 / 축소
+    - 마우스 휠로 이미지 확대, 축소 기능
+
+![2](https://user-images.githubusercontent.com/30463982/219638566-9445e0ca-a1a7-4b1d-8929-e70f35c7723c.gif)
 
 #### Brightness :
 
@@ -184,3 +184,4 @@ npm run lint
 1. [두선분 사이의 각도 구하기](https://blog.naver.com/set_star/222963006080)
 2. [반응형 페이지에 맞게 이미지 크기 실시간 Resize](https://blog.naver.com/set_star/222974450446)
 3. [거리 측정 시 실제 길이 표시(DPI)](https://blog.naver.com/set_star/223000120552)
+4. [오일러 함수를 이용한 좌표 회전](https://blog.naver.com/set_star/223022846686)
